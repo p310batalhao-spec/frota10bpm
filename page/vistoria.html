@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vistoria de Viaturas — 10º BPM</title>
+    <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="../css/stylesindex.css">
+    <style>
+        :root {
+            --cor-primaria: #1a2744;
+            --cor-secundaria: #2e3f6e;
+            --cor-destaque: #c8a415;
+            --cor-fundo: #f0f2f5;
+            --cor-card: #ffffff;
+            --cor-texto: #1a2744;
+            --cor-success: #28a745;
+            --cor-danger: #dc3545;
+            --sombra: 0 4px 14px rgba(0,0,0,.12);
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: var(--cor-fundo);
+            color: var(--cor-texto);
+            padding-bottom: 50px;
+        }
+
+        header {
+            background: var(--cor-primaria);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-left img {
+            height: 50px;
+        }
+
+        .header-title h1 {
+            font-size: 1.2rem;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .header-title p {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin: 0;
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        #user-info {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--cor-destaque);
+        }
+
+        #relogio {
+            font-size: 0.75rem;
+        }
+        main {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .instrucao {
+            background: var(--cor-secundaria);
+            color: white;
+            padding: 15px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* TABELA */
+        .table-container {
+            background: var(--cor-card);
+            border-radius: var(--radius);
+            box-shadow: var(--sombra);
+            overflow: hidden;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--cor-primaria); color: white; padding: 15px; text-align: left; }
+        td { padding: 15px; border-bottom: 1px solid #eee; }
+        
+        .btn-vistoria {
+            background: var(--cor-destaque);
+            color: var(--cor-primaria);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 700px;
+            margin: 20px auto;
+            border-radius: var(--radius);
+            padding: 30px;
+            position: relative;
+        }
+
+        .fechar-modal {
+            position: absolute;
+            top: 15px; right: 15px;
+            cursor: pointer; color: #666;
+        }
+
+        /* FORMULÁRIO */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; }
+        .form-group.full { grid-column: span 2; }
+        
+        label { font-size: 0.85rem; font-weight: bold; color: var(--cor-primaria); }
+        input, select, textarea {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+
+        .section-title {
+            grid-column: span 2;
+            background: #eee;
+            padding: 8px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-left: 4px solid var(--cor-destaque);
+        }
+
+        .btn-salvar {
+            grid-column: span 2;
+            background: var(--cor-success);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+
+        #msg-feedback {
+            position: fixed; top: 20px; right: 20px;
+            padding: 15px 25px; border-radius: 8px;
+            color: white; display: none; z-index: 1100;
+        }
+
+        /* ASSINATURA ELETRÔNICA VIA CPF */
+        .assinatura-container {
+            grid-column: span 2;
+            background: #f8f9fc;
+            border: 1.5px solid #ddd;
+            border-radius: 10px;
+            padding: 18px;
+        }
+        .assinatura-container h4 {
+            font-size: .82rem;
+            font-weight: 700;
+            color: var(--cor-primaria);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .assinatura-confirmada {
+            background: #d4edda;
+            border: 1.5px solid #28a745;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 10px;
+            display: none;
+        }
+        .assinatura-confirmada .nome-assinante {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #155724;
+            font-style: italic;
+        }
+        .assinatura-confirmada .dados-assinante {
+            font-size: .78rem;
+            color: #155724;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="msg-feedback"></div>
+
+    <header>
+        <div class="header-info-left">
+            <img class="brasao" src="/img/brasao.png" alt="Brasão 10º BPM">
+            <div class="cabecalhotexto">
+                <h1>Sistema de Controle de Frota</h1>
+                <h3>10º Batalhão de Polícia Militar</h3>
+            </div>
+        </div>
+        <div class="header-info-right">
+            <div class="relogio" id="relogio"></div>
+        </div>
+    </header>
+
+    <main>
+        <div class="instrucao">
+            <span class="material-icons">info</span>
+            <p>Selecione sua guarnição abaixo para realizar a vistoria da viatura.</p>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Guarnição</th>
+                        <th>Viatura</th>
+                        <th>Placa</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-mapa">
+                    </tbody>
+            </table>
+        </div>
+    </main>
+
+    <div id="modalVistoria" class="modal">
+        <div class="modal-content">
+            <span class="material-icons fechar-modal" onclick="fecharModal()">close</span>
+            <h2 id="modal-titulo">Vistoria de Viatura</h2>
+            <hr><br>
+
+            <form id="formVistoria" class="form-grid">
+                <div class="form-group">
+                    <label>Prefixo</label>
+                    <input type="text" id="v-prefixo" readonly style="background:#f9f9f9">
+                </div>
+                <div class="form-group">
+                    <label>Placa</label>
+                    <input type="text" id="v-placa" readonly style="background:#f9f9f9">
+                </div>
+                <div class="form-group full">
+                    <label>Guarnição</label>
+                    <input type="text" id="v-guarnicao" readonly style="background:#f9f9f9">
+                </div>
+
+                <div class="section-title">Identificação do Condutor</div>
+
+                <!-- CPF — campo de busca principal -->
+                <div class="form-group full">
+                    <label>CPF do Condutor <span style="color:#dc3545">*</span></label>
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <input type="text" id="v-cpf" placeholder="000.000.000-00"
+                               style="flex:1" maxlength="14"
+                               oninput="formatarCPF(this); if(this.value.replace(/\D/g,'').length===11) buscarMotoristaPorCPF();"
+                               onkeydown="if(event.key==='Enter'){event.preventDefault();buscarMotoristaPorCPF();}">
+                        <button type="button" onclick="buscarMotoristaPorCPF()"
+                                style="padding:9px 14px;background:var(--cor-primaria);color:white;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:4px;font-size:.82rem;font-weight:700;white-space:nowrap">
+                            <span class="material-icons" style="font-size:1rem">search</span> Buscar
+                        </button>
+                    </div>
+                    <span id="v-cpf-status" style="font-size:.76rem;margin-top:4px;display:block"></span>
+                </div>
+
+                <!-- Campos preenchidos automaticamente após busca -->
+                <div class="form-group">
+                    <label>Posto / Graduação</label>
+                    <input type="text" id="v-posto" readonly style="background:#f0f4ff;font-weight:700"
+                           placeholder="(preenchido automaticamente)">
+                </div>
+                <div class="form-group">
+                    <label>Matrícula</label>
+                    <input type="text" id="v-matricula" readonly style="background:#f0f4ff;font-weight:700"
+                           placeholder="(preenchido automaticamente)">
+                </div>
+                <div class="form-group full">
+                    <label>Nome Completo do Motorista</label>
+                    <input type="text" id="v-motorista" readonly style="background:#f0f4ff;font-weight:700"
+                           placeholder="(preenchido automaticamente)">
+                </div>
+                <!-- Campo oculto para guardar o ID Firebase do motorista -->
+                <input type="hidden" id="v-motorista-id">
+                <input type="hidden" id="v-cpf-confirmado">
+
+                <div class="section-title">Itens de Inspeção (Checklist)</div>
+                <div class="form-group">
+                    <label>Nível de Combustível</label>
+                    <select id="v-combustivel">
+                        <option value="Reserva">Reserva</option>
+                        <option value="1/4">1/4</option>
+                        <option value="1/2">1/2</option>
+                        <option value="3/4">3/4</option>
+                        <option value="Cheio">Cheio</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Odômetro Atual (KM)</label>
+                    <input type="number" id="v-km" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Limpeza Externa/Interna</label>
+                    <select id="v-limpeza">
+                        <option value="Ótimo">Ótimo</option>
+                        <option value="Bom">Bom</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Suja">Suja</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Equip. (Macaco/Chave/Triângulo)</label>
+                    <select id="v-equipamentos">
+                        <option value="Sem Alteração">Sem Alteração</option>
+                        <option value="Com Alteração">Com Alteração</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Faróis (alto e baixo)</label>
+                    <select id="v-farois">
+                        <option value="Sem Alteração">Sem Alteração</option>
+                        <option value="Com Alteração">Com alteração</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    <input type="text" name="v-farois-outro" id="v-farois-outro" placeholder="Especifique...">
+                </div>
+
+                <div class="form-group">
+                    <label>Iluminação (freios, ré, placa e laterais)</label>
+                    <select id="v-iluminacao">
+                        <option value="Sem Alteração">Sem Alteração</option>
+                        <option value="Com Alteração">Com alteração</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    <input type="text" name="v-iluminacao-outro" id="v-iluminacao-outro" placeholder="Especifique...">
+                </div>
+
+                <div class="form-group">
+                    <label>Ar condicionado</label>
+                    <select id="v-ar">
+                        <option value="Sem Alteração">Sem Alteração</option>
+                        <option value="Com Alteração">Com alteração</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    <input type="text" name="v-ar-outro" id="v-ar-outro" placeholder="Especifique...">
+                </div>
+
+                <div class="form-group">
+                    <label>Giroflex e Sirenes</label>
+                    <select id="v-giroflex">
+                        <option value="Sem Alteração">Sem Alteração</option>
+                        <option value="Com Alteração">Com alteração</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    <input type="text" name="v-giroflex-outro" id="v-giroflex-outro" placeholder="Especifique...">
+                </div>
+
+                <div class="form-group">
+                    <label>Fluído do radiador/reservatório</label>
+                    <select id="v-fluido">
+                        <option value="Sem Alteração">Sem Alteração</option>
+                        <option value="Com Alteração">Com alteração</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    <input type="text" name="v-fluido-outro" id="v-fluido-outro" placeholder="Especifique...">
+                </div>
+
+                <div class="form-group">
+                    <label>Nível de óleo (motor, freio, hidráulico)</label>
+                    <select id="v-oleo">
+                        <option value="Sem Alteração">Sem Alteração</option>
+                        <option value="Com Alteração">Com alteração</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    <input type="text" name="v-oleo-outro" id="v-oleo-outro" placeholder="Especifique...">
+                </div>
+
+                <div class="form-group">
+                    <label>Vidros</label>
+                    <select id="v-vidros">
+                        <option value="Sem Alteração">Sem Alteração</option>
+                        <option value="Com Alteração">Com alteração</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    <input type="text" name="v-vidros-outro" id="v-vidros-outro" placeholder="Especifique...">
+                </div>
+
+                <div class="form-group">
+                    <label>Retrovisores</label>
+                    <select id="v-retrovisores">
+                        <option value="Sem Alteração">Sem Alteração</option>
+                        <option value="Com Alteração">Com alteração</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    <input type="text" name="v-retrovisores-outro" id="v-retrovisores-outro" placeholder="Especifique...">
+                </div>
+
+                <div class="form-group">
+                    <label>Carroceria (capô, porta-malas, laterais, parachoques</label>
+                    <select id="v-carroceria">
+                        <option value="Sem Alteração">Sem Alteração</option>
+                        <option value="Com Alteração">Com alteração</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    <input type="text" name="v-carroceria-outro" id="v-carroceria-outro" placeholder="Especifique...">
+
+                </div>
+                
+                <div class="form-group">
+                    <label>Pneus e estepe</label>
+                    <select id="v-pneus">
+                        <option value="Sem Alteração">Sem Alteração</option>
+                        <option value="Com Alteração">Com alteração</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    <input type="text" name="v-pneus-outro" id="v-pneus-outro" placeholder="Especifique...">
+                </div>
+                
+                <div class="form-group">
+                    <label>Estofados, forração e tapetes</label>
+                    <select id="v-estofados">
+                        <option value="Sem Alteração">Sem Alteração</option>
+                        <option value="Com Alteração">Com alteração</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    <input type="text" name="v-estofados-outro" id="v-estofados-outro" placeholder="Especifique...">
+                </div>
+
+                <div class="form-group">
+                    <label>Limpadores</label>
+                    <select id="v-limpadores">
+                        <option value="Sem Alteração">Sem Alteração</option>
+                        <option value="Com Alteração">Com alteração</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    <input type="text" name="v-limpadores-outro" id="v-limpadores-outro" placeholder="Especifique...">
+                </div>
+
+                <div class="form-group">
+                    <label>Rádio Comunicador</label>
+                    <select id="v-rdio">
+                        <option value="Sem Alteração">Sem Alteração</option>
+                        <option value="Com Alteração">Com alteração</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    <input type="text" name="v-rdio-outro" id="v-rdio-outro" placeholder="Especifique...">
+                </div>
+
+                <div class="form-group">
+                    <label>Cápsula de retenção</label>
+                    <select id="v-capsula">
+                        <option value="Sem Alteração">Sem Alteração</option>
+                        <option value="Com Alteração">Com alteração</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    <input type="text" name="v-capsula-outro" id="v-capsula-outro" placeholder="Especifique...">
+                </div>
+
+                <div class="form-group full">
+                    <label>Observações sobre Avarias (Pneus, Funilaria, etc)</label>
+                    <textarea id="v-obs" rows="3" placeholder="Descreva se houver danos..."></textarea>
+                </div>
+
+                <div class="section-title">Assinatura Eletrônica do Condutor</div>
+
+                <div class="assinatura-container">
+                    <h4>
+                        <span class="material-icons" style="font-size:1.1rem;color:var(--cor-destaque)">verified_user</span>
+                        Assinatura Eletrônica — Confirme sua identidade
+                    </h4>
+                    <p style="font-size:.78rem;color:#888;margin-bottom:12px">
+                        Para assinar eletronicamente, informe seu <strong>CPF</strong> nos dois campos abaixo.
+                        O <strong>login e senha são o próprio CPF</strong> (somente números).
+                    </p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div>
+                            <label style="font-size:.76rem;font-weight:700;color:var(--cor-primaria);display:block;margin-bottom:4px;text-transform:uppercase">CPF</label>
+                            <input type="text" id="ass-cpf" placeholder="000.000.000-00" maxlength="14"
+                                   oninput="formatarCPF(this)"
+                                   style="width:100%;padding:9px 12px;border:1.5px solid #ccc;border-radius:8px;font-size:.9rem">
+                        </div>
+                        <div>
+                            <label style="font-size:.76rem;font-weight:700;color:var(--cor-primaria);display:block;margin-bottom:4px;text-transform:uppercase">Confirme o CPF <span style="color:#dc3545">(senha)</span></label>
+                            <input type="password" id="ass-senha" placeholder="Digite novamente o CPF"
+                                   style="width:100%;padding:9px 12px;border:1.5px solid #ccc;border-radius:8px;font-size:.9rem">
+                        </div>
+                    </div>
+                    <button type="button" onclick="confirmarAssinaturaEletronica()"
+                            style="margin-top:10px;width:100%;padding:10px;background:var(--cor-primaria);color:white;border:none;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+                        <span class="material-icons" style="font-size:1rem">how_to_reg</span>
+                        Confirmar Assinatura Eletrônica
+                    </button>
+                    <p id="ass-msg" style="font-size:.8rem;margin-top:8px;min-height:16px;text-align:center"></p>
+                    <!-- Confirmação visual após assinatura válida -->
+                    <div class="assinatura-confirmada" id="assinatura-confirmada">
+                        <p class="nome-assinante" id="ass-nome-exibido"></p>
+                        <p class="dados-assinante" id="ass-dados-exibidos"></p>
+                        <p style="font-size:.72rem;color:#28a745;margin-top:6px">
+                            ✅ Assinatura eletrônica confirmada — <span id="ass-hora-confirmacao"></span>
+                        </p>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-salvar">FINALIZAR VISTORIA E LIBERAR</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+            <p>Sistema de Controle de Frotas - 10º BPM</p>
+            <p>&copy; 2023 10º BPM. Todos os direitos reservados.</p>
+    </footer>
+
+    <script>
+        const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
+
+        // ================================================================
+        // BUSCA DE MOTORISTA POR CPF
+        // ================================================================
+        let motoristaAtual = null; // objeto do motorista encontrado
+        let assinaturaConfirmada = false;
+        let assinaturaDados = null; // { nomeCivil, posto, matricula, cpf, horaConfirmacao }
+
+        function formatarCPF(input) {
+            let v = input.value.replace(/\D/g,'');
+            if (v.length > 3)  v = v.substring(0,3) + '.' + v.substring(3);
+            if (v.length > 7)  v = v.substring(0,7) + '.' + v.substring(7);
+            if (v.length > 11) v = v.substring(0,11) + '-' + v.substring(11);
+            input.value = v.substring(0,14);
+        }
+
+        async function buscarMotoristaPorCPF() {
+            const cpfDigitado = document.getElementById('v-cpf').value.replace(/\D/g,'');
+            const statusEl = document.getElementById('v-cpf-status');
+
+            if (cpfDigitado.length < 11) {
+                statusEl.style.color = '#888';
+                statusEl.textContent = cpfDigitado.length > 0 ? `⏳ ${cpfDigitado.length}/11 dígitos...` : '';
+                return; // não limpa campos enquanto usuário está digitando
+            }
+
+            // Normaliza com zeros à esquerda (Excel às vezes corta o zero inicial)
+            const cpfRaw = cpfDigitado.padStart(11, '0');
+
+            statusEl.style.color = '#555';
+            statusEl.textContent = '🔎 Buscando...';
+
+            try {
+                const dados = await fetch(`${FB_URL}/motoristas.json`).then(r => r.json());
+                if (!dados) {
+                    statusEl.style.color = 'red';
+                    statusEl.textContent = '⚠️ Nenhum motorista cadastrado.';
+                    return;
+                }
+
+                // Normaliza CPF: remove não-dígitos e completa com zeros à esquerda até 11 dígitos
+                // CPFs no Firebase são sempre salvos com padStart(11,'0')
+                const normCPF = v => String(v ?? '').replace(/\D/g,'').padStart(11, '0');
+
+                const encontrado = Object.entries(dados).find(([, m]) => {
+                    const cpfBanco = normCPF(m.cpf ?? '');
+                    return cpfBanco !== '00000000000' && cpfBanco === normCPF(cpfRaw);
+                });
+
+                if (!encontrado) {
+                    const total = Object.keys(dados).length;
+                    const amostra = Object.values(dados).slice(0,5).map(m => normCPF(m.cpf ?? '—'));
+                    console.warn(`[Vistoria] CPF buscado: "${normCPF(cpfRaw)}" | Total: ${total} | Amostra: ${amostra.join(', ')}`);
+                    statusEl.style.color = '#dc3545';
+                    statusEl.textContent = `❌ CPF não encontrado entre ${total} motoristas. Veja console (F12) para diagnóstico.`;
+                    motoristaAtual = null;
+                    return;
+                }
+
+                const [id, m] = encontrado;
+                motoristaAtual = { id, ...m };
+
+                // Preenche campos readonly
+                document.getElementById('v-posto').value             = m.posto      || '';
+                document.getElementById('v-matricula').value         = m.matricula  || '';
+                document.getElementById('v-motorista').value         = m.nomeCivil  || m.nomeGuerra || m.nome || m.Nome || '';
+                document.getElementById('v-motorista-id').value      = id;
+                document.getElementById('v-cpf-confirmado').value    = cpfRaw;
+
+                // Pré-preenche CPF da assinatura com o mesmo valor digitado
+                document.getElementById('ass-cpf').value = document.getElementById('v-cpf').value;
+
+                statusEl.style.color = '#28a745';
+                statusEl.textContent = `✅ ${m.posto || ''} ${m.nomeCivil || m.nomeGuerra || ''} — Mat: ${m.matricula || '—'}`;
+
+                // Limpa assinatura anterior se havia outro motorista
+                resetarAssinatura();
+
+            } catch(e) {
+                console.error('Erro buscarMotoristaPorCPF:', e);
+                statusEl.style.color = 'red';
+                statusEl.textContent = 'Erro ao buscar. Verifique a conexão com o Firebase.';
+            }
+        }
+
+        function limparCamposCondutor() {
+            ['v-posto','v-matricula','v-motorista','v-motorista-id','v-cpf-confirmado'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            motoristaAtual = null;
+            resetarAssinatura();
+        }
+
+        // ================================================================
+        // ASSINATURA ELETRÔNICA VIA CPF + SENHA
+        // ================================================================
+        function resetarAssinatura() {
+            assinaturaConfirmada = false;
+            assinaturaDados = null;
+            document.getElementById('assinatura-confirmada').style.display = 'none';
+            document.getElementById('ass-msg').textContent = '';
+            document.getElementById('ass-senha').value = '';
+        }
+
+        async function confirmarAssinaturaEletronica() {
+            const cpfAss = document.getElementById('ass-cpf').value.replace(/\D/g,'').padStart(11,'0');
+            // Senha = CPF (campo ass-senha reutilizado como confirmação do CPF)
+            const senhaAss = document.getElementById('ass-senha').value.replace(/\D/g,'').padStart(11,'0');
+            const msgEl  = document.getElementById('ass-msg');
+
+            if (!cpfAss || cpfAss.length < 11) {
+                msgEl.style.color = '#dc3545';
+                msgEl.textContent = '⚠️ Informe o CPF completo.';
+                return;
+            }
+            if (!senhaAss || senhaAss.length < 11) {
+                msgEl.style.color = '#dc3545';
+                msgEl.textContent = '⚠️ Confirme o CPF no campo de senha.';
+                return;
+            }
+            if (cpfAss !== senhaAss) {
+                msgEl.style.color = '#dc3545';
+                msgEl.textContent = '⚠️ CPF e confirmação não coincidem.';
+                return;
+            }
+
+            // Verifica se o CPF bate com o condutor já identificado
+            const cpfCondutor = document.getElementById('v-cpf-confirmado').value.replace(/\D/g,'').padStart(11,'0');
+            if (cpfCondutor && cpfAss !== cpfCondutor) {
+                msgEl.style.color = '#dc3545';
+                msgEl.textContent = '⚠️ CPF da assinatura diferente do CPF do condutor identificado.';
+                return;
+            }
+
+            msgEl.style.color = '#555';
+            msgEl.textContent = '🔎 Verificando...';
+
+            try {
+                // Autentica diretamente contra /motoristas — senha = CPF
+                const normCPF = v => String(v || '').replace(/\D/g,'').padStart(11,'0');
+
+                if (!motoristaAtual) {
+                    msgEl.style.color = '#dc3545';
+                    msgEl.textContent = '⚠️ Identifique o condutor pelo CPF antes de assinar.';
+                    return;
+                }
+
+                // Confirma que o CPF informado bate com o motorista carregado (ambos com padStart)
+                if (normCPF(motoristaAtual.cpf) !== normCPF(cpfAss)) {
+                    msgEl.style.color = '#dc3545';
+                    msgEl.textContent = '❌ CPF não corresponde ao condutor identificado.';
+                    assinaturaConfirmada = false;
+                    return;
+                }
+
+                // Autenticação OK — monta os dados da assinatura
+                const agora = new Date();
+                const horaStr = agora.toLocaleString('pt-BR');
+                const m = motoristaAtual;
+
+                assinaturaDados = {
+                    nomeCivil:        m.nomeCivil  || m.nomeGuerra || '',
+                    nomeGuerra:       m.nomeGuerra || '',
+                    posto:            m.posto      || '',
+                    matricula:        m.matricula  || '',
+                    cpf:              cpfAss,
+                    horaConfirmacao:  agora.toISOString(),
+                    horaConfirmacaoF: horaStr,
+                };
+
+                assinaturaConfirmada = true;
+
+                // Exibe badge de confirmação
+                const nomeFull = `${assinaturaDados.posto} ${assinaturaDados.nomeCivil || assinaturaDados.nomeGuerra}`.trim();
+                document.getElementById('ass-nome-exibido').textContent = nomeFull;
+                document.getElementById('ass-dados-exibidos').textContent =
+                    `Matrícula: ${assinaturaDados.matricula} | CPF: ${cpfAss.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4')}`;
+                document.getElementById('ass-hora-confirmacao').textContent = horaStr;
+                document.getElementById('assinatura-confirmada').style.display = 'block';
+
+                msgEl.style.color = '#28a745';
+                msgEl.textContent = '✅ Identidade confirmada com sucesso!';
+                document.getElementById('ass-senha').value = '';
+
+            } catch(e) {
+                console.error(e);
+                msgEl.style.color = 'red'; msgEl.textContent = 'Erro ao verificar. Verifique a conexão.';
+            }
+        }
+
+        // ── Utilitário: retorna a data de hoje no formato AAAA-MM-DD (fuso local) ──
+        function hojeISO() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+
+        window.onload = () => {
+            carregarMapaDoDia();
+        };
+
+        async function carregarMapaDoDia() {
+            const corpo = document.getElementById('tabela-mapa');
+            corpo.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:#aaa">Carregando...</td></tr>';
+
+            try {
+                // ── 1. Busca o mapa do dia e as vistorias em paralelo ──
+                const [rMapa, rVist] = await Promise.all([
+                    fetch(`${FB_URL}/mapa_diario.json`),
+                    fetch(`${FB_URL}/vistorias.json`)
+                ]);
+
+                const dadosMapa     = await rMapa.json();
+                const dadosVistorias = await rVist.json();
+
+                corpo.innerHTML = '';
+
+                if (!dadosMapa) {
+                    corpo.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px">Nenhuma guarnição lançada para hoje.</td></tr>';
+                    return;
+                }
+
+                const hoje = hojeISO();
+
+                // ── 2. Monta o Set de prefixos+placas já vistoriados HOJE ──
+                //    Chave: "PREFIXO|PLACA" — mesma lógica usada ao renderizar os botões.
+                const jaVistoriados = new Set();
+
+                if (dadosVistorias) {
+                    Object.values(dadosVistorias).forEach(v => {
+                        // dataHora está em ISO → compara apenas a parte da data
+                        if (v.dataHora && v.dataHora.startsWith(hoje)) {
+                            jaVistoriados.add(`${(v.prefixo||'').trim()}|${(v.placa||'').trim()}`);
+                        }
+                    });
+                }
+
+                // ── 3. Filtra guarnições do dia atual ──
+                const listaDoDia = Object.keys(dadosMapa)
+                    .map(id => ({ id, ...dadosMapa[id] }))
+                    .filter(item => {
+                        if (!item.dataHora) return false;
+                        // Prioriza dataAgendamento se existir, senão usa dataHora
+                        let dataItem;
+                        if (item.dataAgendamento) {
+                            dataItem = item.dataAgendamento; // já está em AAAA-MM-DD
+                        } else {
+                            // fallback: extrai data de dataHora
+                            dataItem = item.dataHora.includes('T')
+                                ? item.dataHora.substring(0, 10)
+                                : item.dataHora.split('/').reverse().join('-');
+                        }
+                        return dataItem === hoje;
+                    });
+
+                if (listaDoDia.length === 0) {
+                    corpo.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px">Nenhuma guarnição lançada para hoje.</td></tr>';
+                    return;
+                }
+
+                // ── 4. Separa: pendentes vs. já vistoriadas ──
+                const pendentes    = listaDoDia.filter(item =>
+                    !jaVistoriados.has(`${(item.prefixo||'').trim()}|${(item.placa||'').trim()}`)
+                );
+                const concluidas   = listaDoDia.filter(item =>
+                    jaVistoriados.has(`${(item.prefixo||'').trim()}|${(item.placa||'').trim()}`)
+                );
+
+                // ── 5. Exibe o contador no topo ──
+                const totalMsg = document.querySelector('.instrucao p');
+                totalMsg.innerHTML =
+                    `Pendentes: <strong>${pendentes.length}</strong> &nbsp;|&nbsp; ` +
+                    `Concluídas hoje: <strong style="color:#c8ff9a">${concluidas.length}</strong> &nbsp;|&nbsp; ` +
+                    `Total do dia: <strong>${listaDoDia.length}</strong>`;
+
+                // ── 6. Renderiza pendentes ──
+                if (pendentes.length === 0) {
+                    corpo.innerHTML = `
+                        <tr>
+                            <td colspan="4" style="text-align:center;padding:28px">
+                                <span class="material-icons" style="font-size:2.5rem;color:#28a745;display:block;margin-bottom:8px">check_circle</span>
+                                <strong style="color:#28a745">Todas as viaturas do dia já foram vistoriadas! ✅</strong>
+                            </td>
+                        </tr>`;
+                    return;
+                }
+
+                pendentes.reverse().forEach(item => {
+                    const prefixoSafe   = encodeURI(item.prefixo  || '');
+                    const placaSafe     = encodeURI(item.placa    || '');
+                    const guarnicaoSafe = encodeURI(item.guarnicao|| '');
+                    corpo.innerHTML += `
+                        <tr>
+                            <td><strong>${item.guarnicao || '--'}</strong></td>
+                            <td>${item.prefixo || '--'}</td>
+                            <td>${item.placa   || '--'}</td>
+                            <td>
+                                <button class="btn-vistoria"
+                                    onclick="abrirVistoria(decodeURI('${guarnicaoSafe}'), decodeURI('${prefixoSafe}'), decodeURI('${placaSafe}'))">
+                                    <span class="material-icons">assignment_turned_in</span> VISTORIAR
+                                </button>
+                            </td>
+                        </tr>`;
+                });
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('tabela-mapa').innerHTML =
+                    '<tr><td colspan="4" style="text-align:center;color:red;padding:20px">Erro ao carregar dados. Verifique a conexão.</td></tr>';
+            }
+        }
+
+        // ── Abre o modal com os dados da guarnição ──
+        function abrirVistoria(guarnicao, prefixo, placa) {
+            document.getElementById('v-guarnicao').value = guarnicao;
+            document.getElementById('v-prefixo').value  = prefixo;
+            document.getElementById('v-placa').value    = placa;
+            document.getElementById('modalVistoria').style.display = 'block';
+        }
+
+        function fecharModal() {
+            document.getElementById('modalVistoria').style.display = 'none';
+            document.getElementById('formVistoria').reset();
+            // Limpa estado da identificação e assinatura
+            motoristaAtual = null;
+            assinaturaConfirmada = false;
+            assinaturaDados = null;
+            document.getElementById('v-cpf-status').textContent = '';
+            document.getElementById('assinatura-confirmada').style.display = 'none';
+            document.getElementById('ass-msg').textContent = '';
+        }
+
+        // ── Submit: salva e remove a linha da tabela ──
+        document.getElementById('formVistoria').onsubmit = async (e) => {
+            e.preventDefault();
+
+            // Valida identificação do condutor
+            if (!motoristaAtual) {
+                mostrarMsg('⚠️ Identifique o condutor pelo CPF antes de continuar.', 'erro');
+                document.getElementById('v-cpf').focus();
+                return;
+            }
+
+            // Valida assinatura eletrônica
+            if (!assinaturaConfirmada || !assinaturaDados) {
+                mostrarMsg('⚠️ A assinatura eletrônica é obrigatória! Confirme com CPF e senha.', 'erro');
+                document.getElementById('ass-cpf').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.textContent = 'ENVIANDO...';
+
+            const dadosVistoria = {
+                prefixo:      document.getElementById('v-prefixo').value,
+                placa:        document.getElementById('v-placa').value,
+                guarnicao:    document.getElementById('v-guarnicao').value,
+                // Dados do condutor (vindos do cadastro de motoristas)
+                posto:        assinaturaDados.posto     || document.getElementById('v-posto').value,
+                matricula:    assinaturaDados.matricula || document.getElementById('v-matricula').value,
+                motorista:    assinaturaDados.nomeGuerra,
+                nomeCivil:    assinaturaDados.nomeCivil,
+                cpf:          assinaturaDados.cpf,
+                // Checklist
+                combustivel:  document.getElementById('v-combustivel').value,
+                km:           document.getElementById('v-km').value,
+                limpeza:      document.getElementById('v-limpeza').value,
+                equipamentos: document.getElementById('v-equipamentos').value,
+                farois:       document.getElementById('v-farois').value,
+                iluminacao:   document.getElementById('v-iluminacao').value,
+                ar:           document.getElementById('v-ar').value,
+                giroflex:     document.getElementById('v-giroflex').value,
+                fluido:       document.getElementById('v-fluido').value,
+                oleo:         document.getElementById('v-oleo').value,
+                vidros:       document.getElementById('v-vidros').value,
+                retrovisores: document.getElementById('v-retrovisores').value,
+                carroceria:   document.getElementById('v-carroceria').value,
+                pneus:        document.getElementById('v-pneus').value,
+                estofados:    document.getElementById('v-estofados').value,
+                limpadores:   document.getElementById('v-limpadores').value,
+                radio:        document.getElementById('v-rdio').value,
+                capsula:      document.getElementById('v-capsula').value,
+                observacoes:  document.getElementById('v-obs').value,
+                // Assinatura eletrônica — armazena todos os dados identificadores
+                assinatura: {
+                    tipo:              'eletronica_cpf',
+                    nomeCivil:         assinaturaDados.nomeCivil,
+                    nomeGuerra:        assinaturaDados.nomeGuerra,
+                    posto:             assinaturaDados.posto,
+                    matricula:         assinaturaDados.matricula,
+                    cpf:               assinaturaDados.cpf,
+                    horaConfirmacao:   assinaturaDados.horaConfirmacao,
+                },
+                dataHora: new Date().toISOString()
+            };
+
+            try {
+                await fetch(`${FB_URL}/vistorias.json`, {
+                    method: 'POST',
+                    body: JSON.stringify(dadosVistoria),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                mostrarMsg('Vistoria registrada com sucesso! ✅', 'ok');
+                fecharModal();
+
+                // ── Recarrega a lista — a viatura recém-vistoriada não vai mais aparecer ──
+                carregarMapaDoDia();
+
+            } catch (error) {
+                console.error(error);
+                mostrarMsg('Erro ao salvar vistoria. Tente novamente.', 'erro');
+                btn.disabled = false;
+                btn.textContent = 'FINALIZAR VISTORIA E LIBERAR';
+            }
+        };
+
+        function mostrarMsg(texto, tipo) {
+            const el = document.getElementById('msg-feedback');
+            el.textContent = texto;
+            el.style.display = 'block';
+            el.style.backgroundColor = tipo === 'ok' ? 'var(--cor-success)' : 'var(--cor-danger)';
+            setTimeout(() => el.style.display = 'none', 3500);
+        }
+
+        // Fecha modal APENAS ao clicar no fundo escuro do overlay
+        document.getElementById('modalVistoria').addEventListener('click', function(e) {
+            if (e.target === this) fecharModal();
+        });
+    </script>
+</body>
+</html>

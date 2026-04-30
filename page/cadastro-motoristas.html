@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Motoristas — 10º BPM</title>
+    <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+   <link rel="stylesheet" href="../css/stylescadastro-motoristas.css">
+</head>
+<body>
+    <header>
+        <div class="header-info-left">
+            <img class="brasao" src="/img/brasao.png" alt="Brasão 10º BPM">
+            <div class="cabecalhotexto">
+                <h1>Sistema de Controle de Frota</h1>
+                <h3>10º Batalhão de Polícia Militar</h3>
+            </div>
+        </div>
+        <div class="header-info-right">
+            <div class="relogio" id="relogio"></div>
+            <div class="exibirusuario" id="user-info"></div>
+        </div>
+    </header>
+
+    <section class="pagecomplete">
+         <nav class="navegacao">
+        <a href="../index.html">
+            <img width="40" height="40" src="https://img.icons8.com/fluency-systems-regular/48/home--v1.png" alt="home">
+            <p>Home</p>
+        </a>
+        <a href="/page/cadastro-viaturas.html">
+            <img width="40" height="40" src="https://img.icons8.com/external-kiranshastry-solid-kiranshastry/64/external-police-car-law-and-crime-kiranshastry-solid-kiranshastry.png" alt="viaturas">
+            <p>Viaturas</p>
+        </a>
+        <a href="/page/cadastro-motoristas.html" class="active">
+            <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/user--v1.png" alt="motoristas">
+            <p>Motoristas</p>
+        </a>
+        <a href="/page/manutencao.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/maintenance.png" alt="manutencao">
+            <p>Manutenção</p>
+        </a>
+        <a href="/page/mapa_diario.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/map--v1.png" alt="mapa">
+            <p>Mapa Diário</p>
+        </a>
+        <a href="/page/check_vistorias.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios-filled/50/inspection.png" alt="vistorias">
+            <p>Vistorias</p>
+        </a>
+        <a href="/page/sinistros.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/car-accident.png" alt="sinistros">
+            <p>Sinistros</p>
+        </a>
+        <hr class="nav-separator">
+        <button onclick="logout()">
+            <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/exit.png" alt="Sair">
+            <p>Sair</p>
+        </button>
+    </nav>
+
+        <main>
+            <div class="saudacao">
+                <h2>👤 Cadastro de Motoristas</h2>
+                <p>Gerencie os militares habilitados a conduzir viaturas do 10º Batalhão.</p>
+            </div>
+            <div class="actions-bar">
+                <button class="btn-novo" onclick="abrirModalNovo()">
+                    <span class="material-icons" style="font-size:1.1rem">person_add</span>
+                    Novo Motorista
+                </button>
+                <button class="btn-novo" onclick="abrirModalImportacao()" style="background:var(--cor-success)">
+                    <span class="material-icons" style="font-size:1.1rem">upload_file</span>
+                    Importar XLS (RH/PMAL)
+                </button>
+                <select class="filtro-status" id="filtro-status" onchange="aplicarFiltros()">
+                    <option value="">Todos os status</option>
+                    <option value="Ativo">Ativo</option>
+                    <option value="Afastado">Afastado</option>
+                    <option value="Ferias">Em Férias</option>
+                    <option value="Licenca">De Licença</option>
+                    <option value="Suspenso">Suspenso</option>
+                </select>
+                <input class="busca-input" type="text" id="busca" placeholder="🔍 Buscar nome, matrícula, posto..." oninput="aplicarFiltros()">
+                <span id="contador-registros"></span>
+            </div>
+            <div class="tabela-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Matrícula</th>
+                            <th>Nome de Guerra</th>
+                            <th>Nome Civil</th>
+                            <th>Posto/Grad.</th>
+                            <th>Subunidade</th>
+                            <th>Nº CNH</th>
+                            <th>Cat. CNH</th>
+                            <th>Validade CNH</th>
+                            <th>Telefone</th>
+                            <th>Status</th>
+                            <th>Observações</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-motoristas">
+                        <tr><td colspan="12" style="text-align:center;padding:28px;color:#aaa">Carregando motoristas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </section>
+
+    <footer><h4>Seção de Operações — P3 / 10º Batalhão de Polícia Militar</h4></footer>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modal-motorista">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="modal-titulo">👤 Novo Motorista</h3>
+                <button class="modal-close" onclick="fecharModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="m-id">
+
+                <p class="form-section-title">Identificação Militar</p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="campo-obrigatorio">Matrícula</label>
+                        <input type="text" id="m-matricula" placeholder="Ex: 123456">
+                    </div>
+                    <div class="form-group">
+                        <label class="campo-obrigatorio">Nome de Guerra</label>
+                        <input type="text" id="m-nomeGuerra" placeholder="Ex: SILVA">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome Civil Completo</label>
+                        <input type="text" id="m-nomeCivil" placeholder="Ex: João da Silva Santos">
+                    </div>
+                    <div class="form-group">
+                        <label class="campo-obrigatorio">Posto / Graduação</label>
+                        <select id="m-posto">
+                            <option value="">Selecione...</option>
+                            <optgroup label="Oficiais">
+                                <option value="CEL">CEL — Coronel</option>
+                                <option value="TC">TC — Ten. Coronel</option>
+                                <option value="MAJ">MAJ — Major</option>
+                                <option value="CAP">CAP — Capitão</option>
+                                <option value="1TEN">1º TEN — 1º Tenente</option>
+                                <option value="2TEN">2º TEN — 2º Tenente</option>
+                            </optgroup>
+                            <optgroup label="Praças">
+                                <option value="SUB">SUB TEN — Sub Tenente</option>
+                                <option value="1SGT">1º SGT — 1º Sargento</option>
+                                <option value="2SGT">2º SGT — 2º Sargento</option>
+                                <option value="3SGT">3º SGT — 3º Sargento</option>
+                                <option value="CB">CB — Cabo</option>
+                                <option value="SD">SD — Soldado</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Subunidade / Companhia</label>
+                        <input type="text" id="m-subunidade" placeholder="Ex: 1ª Cia, CIPOC, P3">
+                    </div>
+                    <div class="form-group">
+                        <label>Turno de Serviço</label>
+                        <select id="m-turno">
+                            <option value="">Selecione...</option>
+                            <option value="Diurno">Diurno</option>
+                            <option value="Noturno">Noturno</option>
+                            <option value="24x72">24x72</option>
+                            <option value="12x36">12x36</option>
+                            <option value="Administrativo">Administrativo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <p class="form-section-title">Habilitação (CNH)</p>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label class="campo-obrigatorio">Nº da CNH</label>
+                        <input type="text" id="m-cnh" placeholder="Ex: 01234567890">
+                    </div>
+                    <div class="form-group">
+                        <label class="campo-obrigatorio">Categoria</label>
+                        <select id="m-categoriaCnh">
+                            <option value="">Selecione...</option>
+                            <option value="A">A — Moto</option>
+                            <option value="B">B — Carro/Caminhonete</option>
+                            <option value="AB">AB — Moto + Carro</option>
+                            <option value="C">C — Caminhão leve</option>
+                            <option value="D">D — Veículo passageiros</option>
+                            <option value="E">E — Combinações</option>
+                            <option value="ACC">ACC — Autorização especial</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="campo-obrigatorio">Validade da CNH</label>
+                        <input type="date" id="m-validadeCnh">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Restrições da CNH</label>
+                    <input type="text" id="m-restricoesCnh" placeholder="Ex: Usa óculos, nenhuma">
+                </div>
+
+                <p class="form-section-title">Contato</p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Telefone / WhatsApp</label>
+                        <input type="tel" id="m-telefone" placeholder="(82) 99999-9999">
+                    </div>
+                    <div class="form-group">
+                        <label>E-mail</label>
+                        <input type="email" id="m-email" placeholder="silva@pmal.al.gov.br">
+                    </div>
+                </div>
+
+                <p class="form-section-title">Situação</p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="campo-obrigatorio">Status</label>
+                        <select id="m-status">
+                            <option value="Ativo">Ativo</option>
+                            <option value="Afastado">Afastado</option>
+                            <option value="Ferias">Em Férias</option>
+                            <option value="Licenca">De Licença</option>
+                            <option value="Suspenso">Suspenso</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Motivo do Afastamento</label>
+                        <input type="text" id="m-motivoAfastamento" placeholder="Se aplicável">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Observações</label>
+                    <textarea id="m-obs" rows="3" placeholder="Informações adicionais, histórico de ocorrências, etc..."></textarea>
+                </div>
+            </div>
+            <p class="msg-feedback" id="m-msg"></p>
+            <div class="modal-footer">
+                <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+                <button class="btn-salvar" onclick="salvarMotorista()">Salvar Motorista</button>
+            </div>
+        </div>
+    </div>
+
+<script src="../js/cadastro-motoristas.js"></script>
+
+    <!-- ══════════════════════════════════════════════
+         MODAL — IMPORTAÇÃO XLS (RH/PMAL)
+    ══════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="modal-importacao">
+        <div class="modal-box modal-box-xl">
+            <div class="modal-header">
+                <h3>📂 Importar Militares — Arquivo RH/PMAL (.xls)</h3>
+                <button class="modal-close" onclick="fecharModalImportacao()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:.82rem;color:#555;margin-bottom:14px">
+                    Selecione o arquivo <strong>.xls</strong> exportado do sistema RH/PMAL.<br>
+                    Colunas utilizadas: <code>P/G | Matrícula | Nome | Cpf | Opm | Condição | Situação</code>
+                </p>
+
+                <div class="xls-drop" id="xls-drop" onclick="document.getElementById('xls-file-input').click()">
+                    <span class="material-icons">upload_file</span>
+                    <p><strong>Clique aqui</strong> ou arraste o arquivo .xls para importar</p>
+                    <p id="xls-file-name" style="margin-top:6px;font-size:.78rem;color:var(--cor-primaria)"></p>
+                </div>
+                <input type="file" id="xls-file-input" accept=".xls,.xlsx,.csv" style="display:none" onchange="processarArquivoXLS(this.files[0])">
+
+                <div id="xls-preview-area" style="display:none;margin-top:16px">
+                    <p style="font-size:.82rem;font-weight:700;color:var(--cor-primaria);margin-bottom:6px">
+                        Pré-visualização — <span id="xls-total-linhas">0</span> militares lidos
+                        <span id="xls-ja-cadastrados-info" style="color:#888;font-weight:400;margin-left:8px"></span>
+                    </p>
+                    <div class="preview-table-wrap" id="xls-preview-table"></div>
+                    <p style="font-size:.76rem;color:#888;margin-top:6px">
+                        Somente os militares que <strong>ainda não constam</strong> na base (por matrícula) serão inseridos.
+                    </p>
+                </div>
+
+                <div id="xls-import-progress" style="display:none;margin-top:16px">
+                    <p class="import-stats" id="xls-progress-label">Importando 0 / 0...</p>
+                    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="xls-progress-bar"></div></div>
+                </div>
+            </div>
+            <p class="msg-feedback" id="xls-msg"></p>
+            <div class="modal-footer">
+                <button class="btn-cancelar" onclick="fecharModalImportacao()">Cancelar</button>
+                <button class="btn-salvar" id="btn-confirmar-importar" style="display:none" onclick="confirmarImportacaoXLS()">
+                    <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">save</span>
+                    Importar para o Firebase
+                </button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

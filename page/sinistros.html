@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinistros de Viaturas — 10º BPM</title>
+    <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <link rel="stylesheet" href="../css/sinistros.css">
+</head>
+<body>
+
+<header>
+    <div class="header-info-left">
+        <img class="brasao" src="/img/brasao.png" alt="Brasão 10º BPM" onerror="this.style.display='none'">
+        <div class="cabecalhotexto">
+            <h1>Sistema de Controle de Frota</h1>
+            <h3>10º Batalhão de Polícia Militar</h3>
+        </div>
+    </div>
+    <div class="header-info-right">
+        <div class="relogio" id="relogio"></div>
+        <div class="exibirusuario" id="user-info"></div>
+    </div>
+</header>
+
+<section class="pagecomplete">
+    <nav class="navegacao">
+        <a href="../index.html">
+            <img width="40" height="40" src="https://img.icons8.com/fluency-systems-regular/48/home--v1.png" alt="home">
+            <p>Home</p>
+        </a>
+        <a href="/page/cadastro-viaturas.html">
+            <img width="40" height="40" src="https://img.icons8.com/external-kiranshastry-solid-kiranshastry/64/external-police-car-law-and-crime-kiranshastry-solid-kiranshastry.png" alt="viaturas">
+            <p>Viaturas</p>
+        </a>
+        <a href="/page/cadastro-motoristas.html">
+            <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/user--v1.png" alt="motoristas">
+            <p>Motoristas</p>
+        </a>
+        <a href="/page/manutencao.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/maintenance.png" alt="manutencao">
+            <p>Manutenção</p>
+        </a>
+        <a href="/page/mapa_diario.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/map--v1.png" alt="mapa">
+            <p>Mapa Diário</p>
+        </a>
+        <a href="/page/check_vistorias.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios-filled/50/inspection.png" alt="vistorias">
+            <p>Vistorias</p>
+        </a>
+        <a href="/page/sinistros.html" class="active">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/car-accident.png" alt="sinistros">
+            <p>Sinistros</p>
+        </a>
+        <hr class="nav-separator">
+        <button onclick="logout()">
+            <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/exit.png" alt="Sair">
+            <p>Sair</p>
+        </button>
+    </nav>
+
+    <main>
+        <div class="saudacao">
+            <h2>🚨 Sinistros de Viaturas</h2>
+            <p>Registro de comunicações de sinistro conforme modelo AMGESP — Anexo I.</p>
+        </div>
+
+        <div class="actions-bar">
+            <button class="btn-novo" onclick="abrirModalCadastro()">
+                <span class="material-icons" style="font-size:1.1rem">add_circle</span>
+                Registrar Sinistro
+            </button>
+            <input class="busca-input" type="text" id="busca" placeholder="🔍 Buscar placa, condutor, tipo..." oninput="aplicarFiltros()">
+            <span id="contador-registros"></span>
+        </div>
+
+        <div class="tabela-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nº Sinistro</th>
+                        <th>Data</th>
+                        <th>Placa</th>
+                        <th>Prefixo</th>
+                        <th>Condutor</th>
+                        <th>Local</th>
+                        <th>Tipo</th>
+                        <th>Locadora</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-sinistros">
+                    <tr>
+                        <td colspan="9" style="text-align:center;padding:36px;color:#aaa">
+                            <span class="material-icons" style="font-size:2.2rem;display:block;margin-bottom:8px;color:#ddd">car_crash</span>
+                            Carregando registros...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</section>
+
+<footer><h4>Seção de Operações — P3 / 10º Batalhão de Polícia Militar</h4></footer>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     MODAL — CADASTRO DE SINISTRO
+     (segue estrutura do Termo de Comunicação de Sinistro / AMGESP Anexo I)
+═══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-cadastro">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><span class="material-icons">report</span> Comunicação de Sinistro — Anexo I</h3>
+            <button class="modal-close" onclick="fecharCadastro()">✕</button>
+        </div>
+        <div class="modal-body">
+
+            <!-- 01 / 02 — UG e Número do Sinistro -->
+            <div class="form-section">
+                <div class="form-section-title"><span class="material-icons">numbers</span>Identificação</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>01 — Unidade Gestora (UG)</label>
+                        <input type="text" id="s-ug" value="10º Batalhão de Polícia Militar — Palmeira dos Índios">
+                    </div>
+                    <div class="form-group">
+                        <label>02 — Nº do Sinistro <span class="req">*</span></label>
+                        <input type="text" id="s-numero" placeholder="Ex: 009/2026" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 03 — DADOS DO VEÍCULO -->
+            <div class="form-section">
+                <div class="form-section-title"><span class="material-icons">directions_car</span>03 — Dados do Veículo Sinistrado</div>
+                <div class="form-row-4">
+                    <div class="form-group">
+                        <label>Placa <span class="req">*</span></label>
+                        <input type="text" id="s-placa" placeholder="AAA0000" oninput="buscarViatura(this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>Prefixo</label>
+                        <input type="text" id="s-prefixo" placeholder="Ex: P-01">
+                    </div>
+                    <div class="form-group">
+                        <label>Marca</label>
+                        <input type="text" id="s-marca" placeholder="Ex: FIAT">
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <input type="text" id="s-tipo-veiculo" placeholder="Ex: CAMINHONETE">
+                    </div>
+                </div>
+                <div class="form-row-4">
+                    <div class="form-group" style="grid-column:span 2">
+                        <label>Modelo</label>
+                        <input type="text" id="s-modelo" placeholder="Ex: TITANO ENDURANCE">
+                    </div>
+                    <div class="form-group">
+                        <label>Cor</label>
+                        <input type="text" id="s-cor" placeholder="Ex: CINZA">
+                    </div>
+                    <div class="form-group">
+                        <label>Ano</label>
+                        <input type="text" id="s-ano-veiculo" placeholder="Ex: 2023">
+                    </div>
+                </div>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label>Chassi</label>
+                        <input type="text" id="s-chassi" placeholder="17 dígitos">
+                    </div>
+                    <div class="form-group">
+                        <label>RENAVAM</label>
+                        <input type="text" id="s-renavam" placeholder="Ex: 1438894250">
+                    </div>
+                    <div class="form-group">
+                        <label>KM na Ocorrência</label>
+                        <input type="number" id="s-km" placeholder="0">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 04 — LOCADORA -->
+            <div class="form-section">
+                <div class="form-section-title"><span class="material-icons">business</span>04 — Locadora / Proprietário</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome da Locadora / Proprietário</label>
+                        <input type="text" id="s-locadora" placeholder="Ex: LOCALIZA, PMAL...">
+                    </div>
+                    <div class="form-group">
+                        <label>Nº do Contrato</label>
+                        <input type="text" id="s-contrato" placeholder="Nº do contrato de locação">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 05 — DADOS DO CONDUTOR -->
+            <div class="form-section">
+                <div class="form-section-title"><span class="material-icons">badge</span>05 — Dados do Condutor do Veículo</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome Completo <span class="req">*</span></label>
+                        <input type="text" id="s-condutor-nome" placeholder="Nome completo">
+                    </div>
+                    <div class="form-group">
+                        <label>Matrícula <span class="req">*</span></label>
+                        <input type="text" id="s-condutor-matricula" placeholder="Ex: 48542">
+                    </div>
+                </div>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label>Posto / Graduação</label>
+                        <select id="s-condutor-posto">
+                            <option value="">Selecione...</option>
+                            <option>Soldado</option><option>Cabo</option>
+                            <option>3º Sargento</option><option>2º Sargento</option>
+                            <option>1º Sargento</option><option>Subtenente</option>
+                            <option>Aspirante</option><option>2º Tenente</option>
+                            <option>1º Tenente</option><option>Capitão</option>
+                            <option>Major</option><option>Tenente-Coronel</option><option>Coronel</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>CNH</label>
+                        <input type="text" id="s-condutor-cnh" placeholder="Nº da CNH">
+                    </div>
+                    <div class="form-group">
+                        <label>Validade CNH</label>
+                        <input type="date" id="s-condutor-cnh-val">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Lotação</label>
+                    <input type="text" id="s-condutor-lotacao" value="10º BPM">
+                </div>
+            </div>
+
+            <!-- 06 — DADOS DO SINISTRO -->
+            <div class="form-section">
+                <div class="form-section-title"><span class="material-icons">location_on</span>06 — Dados do Sinistro</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Local (Rua/Rodovia) <span class="req">*</span></label>
+                        <input type="text" id="s-local" placeholder="Ex: Rua da Matança">
+                    </div>
+                    <div class="form-group">
+                        <label>Bairro</label>
+                        <input type="text" id="s-bairro" placeholder="Ex: Centro">
+                    </div>
+                </div>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label>Cidade</label>
+                        <input type="text" id="s-cidade" placeholder="Ex: Estrela de Alagoas">
+                    </div>
+                    <div class="form-group">
+                        <label>Data <span class="req">*</span></label>
+                        <input type="date" id="s-data">
+                    </div>
+                    <div class="form-group">
+                        <label>Hora</label>
+                        <input type="time" id="s-hora">
+                    </div>
+                </div>
+
+                <!-- TIPO DE SINISTRO -->
+                <div class="form-group">
+                    <label>Tipo de Sinistro <span class="req">*</span></label>
+                    <div class="tipos-grid">
+                        <label class="tipo-item" id="tipo-Atropelamento">
+                            <input type="checkbox" value="Atropelamento" onchange="toggleTipo(this)"> Atropelamento
+                        </label>
+                        <label class="tipo-item" id="tipo-Capotamento">
+                            <input type="checkbox" value="Capotamento" onchange="toggleTipo(this)"> Capotamento
+                        </label>
+                        <label class="tipo-item" id="tipo-Colisão">
+                            <input type="checkbox" value="Colisão" onchange="toggleTipo(this)"> Colisão
+                        </label>
+                        <label class="tipo-item" id="tipo-Queda">
+                            <input type="checkbox" value="Queda" onchange="toggleTipo(this)"> Queda
+                        </label>
+                        <label class="tipo-item" id="tipo-Tombamento">
+                            <input type="checkbox" value="Tombamento" onchange="toggleTipo(this)"> Tombamento
+                        </label>
+                        <label class="tipo-item" id="tipo-Choque">
+                            <input type="checkbox" value="Choque" onchange="toggleTipo(this)"> Choque
+                        </label>
+                        <label class="tipo-item" id="tipo-Roubo">
+                            <input type="checkbox" value="Roubo" onchange="toggleTipo(this)"> Roubo
+                        </label>
+                        <label class="tipo-item" id="tipo-Furto">
+                            <input type="checkbox" value="Furto" onchange="toggleTipo(this)"> Furto
+                        </label>
+                        <label class="tipo-item" id="tipo-Incêndio">
+                            <input type="checkbox" value="Incêndio" onchange="toggleTipo(this)"> Incêndio
+                        </label>
+                        <label class="tipo-item" id="tipo-Alagamento">
+                            <input type="checkbox" value="Alagamento" onchange="toggleTipo(this)"> Alagamento
+                        </label>
+                        <label class="tipo-item" id="tipo-Outros">
+                            <input type="checkbox" value="Outros" onchange="toggleTipo(this)"> Outros
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DANOS CAUSADOS -->
+            <div class="form-section">
+                <div class="form-section-title"><span class="material-icons">car_crash</span>Danos Causados</div>
+
+                <p style="font-size:.76rem;font-weight:700;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">Em Veículos de Terceiros</p>
+                <div class="danos-terceiros-row" id="danos-terceiros-container">
+                    <!-- linha 1 preenchida por padrão -->
+                </div>
+                <button type="button" onclick="addVeiculoTerceiro()" style="margin-top:8px;padding:5px 14px;background:#f0f2f5;border:1.5px dashed #ccc;border-radius:7px;font-size:.78rem;cursor:pointer;color:#555">
+                    + Adicionar Veículo de Terceiro
+                </button>
+
+                <p style="font-size:.76rem;font-weight:700;color:#555;margin:14px 0 8px;text-transform:uppercase;letter-spacing:.4px">A Terceiros — Objetos Fixos</p>
+                <div class="danos-fixos-check">
+                    <label class="dano-fixo-item"><input type="checkbox" id="dano-poste"> Poste</label>
+                    <label class="dano-fixo-item"><input type="checkbox" id="dano-muro"> Muro</label>
+                    <label class="dano-fixo-item"><input type="checkbox" id="dano-parede"> Parede</label>
+                    <label class="dano-fixo-item"><input type="checkbox" id="dano-arvore"> Árvore</label>
+                    <label class="dano-fixo-item"><input type="checkbox" id="dano-guard"> Guard Rail</label>
+                    <label class="dano-fixo-item"><input type="checkbox" id="dano-outros-fixos"> Outros</label>
+                </div>
+            </div>
+
+            <!-- 07 — TESTEMUNHAS -->
+            <div class="form-section">
+                <div class="form-section-title"><span class="material-icons">groups</span>07 — Testemunhas / Passageiros</div>
+                <p style="font-size:.76rem;color:#888;margin-bottom:10px">Passageiros: (1, 2 e 3) — Presenciais: (4, 5 e 6)</p>
+                <div id="testemunhas-container"></div>
+                <button type="button" onclick="addTestemunha()" style="margin-top:4px;padding:5px 14px;background:#f0f2f5;border:1.5px dashed #ccc;border-radius:7px;font-size:.78rem;cursor:pointer;color:#555">
+                    + Adicionar Testemunha
+                </button>
+            </div>
+
+            <!-- 08 — DANOS NO VEÍCULO -->
+            <div class="form-section">
+                <div class="form-section-title"><span class="material-icons">build</span>08 — Descrição dos Danos nos Veículos</div>
+                <div class="form-group">
+                    <label>08A — Danos no Veículo Oficial</label>
+                    <textarea id="s-danos-oficial" placeholder="Descreva os danos no veículo oficial..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>08B — Danos no Veículo de Terceiros</label>
+                    <textarea id="s-danos-terceiros-desc" placeholder="Descreva os danos no veículo de terceiros..."></textarea>
+                </div>
+            </div>
+
+            <!-- 09 — DESCRIÇÃO DO SINISTRO -->
+            <div class="form-section">
+                <div class="form-section-title"><span class="material-icons">article</span>09 — Descrição do Sinistro</div>
+                <div class="form-group">
+                    <label>Descreva o sinistro sucintamente <span class="req">*</span></label>
+                    <textarea id="s-descricao" rows="5" placeholder="Descreva as circunstâncias do sinistro..."></textarea>
+                </div>
+            </div>
+
+            <!-- 10 — SERVIÇO QUE REALIZAVA -->
+            <div class="form-section">
+                <div class="form-section-title"><span class="material-icons">work</span>10 — Serviço na Ocasião do Sinistro</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Serviço que realizava</label>
+                        <input type="text" id="s-servico" placeholder="Ex: Realizando rondas ostensivas">
+                    </div>
+                    <div class="form-group">
+                        <label>Responsável pelas Informações (Subgestor)</label>
+                        <input type="text" id="s-responsavel" placeholder="Nome e posto do subgestor">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Observações Adicionais</label>
+                    <textarea id="s-obs" rows="2" placeholder="Observações complementares..."></textarea>
+                </div>
+            </div>
+
+        </div><!-- fim modal-body -->
+        <p class="msg-feedback" id="s-msg"></p>
+        <div class="modal-footer">
+            <button class="btn-cancelar" onclick="fecharCadastro()">Cancelar</button>
+            <button class="btn-salvar" onclick="salvarSinistro()">
+                <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">save</span>
+                Salvar Sinistro
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     MODAL — VER DETALHES DO SINISTRO
+═══════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-detalhes">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><span class="material-icons">fact_check</span> Detalhes do Sinistro</h3>
+            <button class="modal-close" onclick="fecharDetalhes()">✕</button>
+        </div>
+        <div class="det-body" id="det-body-content">
+            <!-- preenchido por JS -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancelar" onclick="fecharDetalhes()">Fechar</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     MODAL — CONFIRMAR EXCLUSÃO
+═══════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-del">
+    <div class="modal-box modal-box-sm">
+        <div class="modal-header">
+            <h3><span class="material-icons">delete_forever</span> Confirmar Exclusão</h3>
+            <button class="modal-close" onclick="fecharDel()">✕</button>
+        </div>
+        <div class="confirm-body">
+            <span class="material-icons confirm-icon">warning</span>
+            <h4>Excluir este registro de sinistro?</h4>
+            <p>Sinistro <strong id="del-num-label"></strong> — <span id="del-placa-label"></span><br>
+            <span style="color:var(--cor-danger);font-size:.8rem">Esta ação não pode ser desfeita.</span></p>
+        </div>
+        <div class="confirm-footer">
+            <button class="btn-cancelar-del" onclick="fecharDel()">Cancelar</button>
+            <button class="btn-confirmar-del" id="btn-confirmar-del" onclick="confirmarExclusao()">
+                <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">delete_forever</span>
+                Sim, excluir
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="../js/sinistros.js"></script>
+</body>
+</html>

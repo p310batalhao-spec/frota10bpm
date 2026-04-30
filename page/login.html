@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Sistema de Frota / 10º BPM</title>
+    <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="../css/login.css">
+</head>
+
+<body>
+
+    <div class="login-card">
+        <img class="brasao-login" src="/img/brasao.png" alt="Brasão PMAL">
+        <h1>Sistema de Controle de Frota</h1>
+        <h2>10º Batalhão de Polícia Militar</h2>
+        <div class="divider"></div>
+
+        <!-- ABAS -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="trocarAba('login')">
+                <span class="material-icons"
+                    style="font-size:.95rem;vertical-align:middle;margin-right:4px">login</span>
+                Entrar
+            </button>
+            <button class="tab-btn" onclick="trocarAba('cadastro')">
+                <span class="material-icons"
+                    style="font-size:.95rem;vertical-align:middle;margin-right:4px">person_add</span>
+                Cadastrar
+            </button>
+        </div>
+
+        <!-- ══ ABA: LOGIN ══ -->
+        <div class="tab-painel active" id="painel-login">
+            <div class="form-group">
+                <label>Usuário</label>
+                <div class="input-wrapper">
+                    <span class="material-icons">person</span>
+                    <input type="text" id="login-usuario" placeholder="CPF" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Senha</label>
+                <div class="input-wrapper">
+                    <span class="material-icons">lock</span>
+                    <input type="password" id="login-senha" placeholder="••••••••">
+                </div>
+            </div>
+
+            <button class="btn-primario" id="btn-entrar">Entrar</button>
+            <p class="msg-feedback msg-erro" id="login-erro"></p>
+        </div>
+
+        <!-- ══ ABA: CADASTRO ══ -->
+        <div class="tab-painel" id="painel-cadastro">
+
+            <div class="aviso-perfil">
+                ⚠️ O cadastro de novos usuários requer <strong>aprovação de um Administrador</strong>.
+                Sua conta ficará aguardando liberação após o registro.
+            </div>
+
+            <!-- Nome de guerra + Nome Completo -->
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label>Nome de Guerra *</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons">badge</span>
+                        <input type="text" id="cad-usuario" placeholder="Ex: SILVA" autocomplete="off">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Matrícula *</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons">tag</span>
+                        <input type="text" id="cad-matricula" placeholder="Ex: 123456">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nome Completo (linha inteira) -->
+            <div class="form-group">
+                <label>Nome Completo *</label>
+                <div class="input-wrapper">
+                    <span class="material-icons">person</span>
+                    <input type="text" id="cad-nome-completo" placeholder="Ex: João da Silva Santos" autocomplete="off">
+                </div>
+            </div>
+
+            <!-- CPF -->
+            <div class="form-group">
+                <label>CPF *</label>
+                <div class="input-wrapper">
+                    <span class="material-icons">contact_page</span>
+                    <input type="text" id="cad-cpf" placeholder="Ex: 12345678900">
+                </div>
+            </div>
+
+            <!-- Posto/Graduação + Seção -->
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label>Posto / Graduação *</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons">military_tech</span>
+                        <select id="cad-posto">
+                            <option value="">Selecione...</option>
+                            <optgroup label="Oficiais">
+                                <option value="CEL">CEL — Coronel</option>
+                                <option value="TC">TC — Ten. Coronel</option>
+                                <option value="MAJ">MAJ — Major</option>
+                                <option value="CAP">CAP — Capitão</option>
+                                <option value="1TEN">1º TEN — 1º Tenente</option>
+                                <option value="2TEN">2º TEN — 2º Tenente</option>
+                                <option value="ALTEN">AL TEN — Aluno Tenente</option>
+                            </optgroup>
+                            <optgroup label="Praças">
+                                <option value="SUB">SUB TEN — Sub Tenente</option>
+                                <option value="1SGT">1º SGT — 1º Sargento</option>
+                                <option value="2SGT">2º SGT — 2º Sargento</option>
+                                <option value="3SGT">3º SGT — 3º Sargento</option>
+                                <option value="CB">CB — Cabo</option>
+                                <option value="SD">SD — Soldado</option>
+                            </optgroup>
+                            <optgroup label="Civil">
+                                <option value="CIVIL">Civil</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Seção / Subunidade</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons">apartment</span>
+                        <input type="text" id="cad-secao" placeholder="Ex: P3, CIPOC">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Senha + Confirmar senha -->
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label>Senha *</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons">lock</span>
+                        <input type="password" id="cad-senha" placeholder="Mínimo 6 caracteres">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Confirmar Senha *</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons">lock_clock</span>
+                        <input type="password" id="cad-senha2" placeholder="Repita a senha">
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-primario" id="btn-cadastrar">Solicitar Cadastro</button>
+            <p class="msg-feedback" id="cad-msg"></p>
+        </div>
+
+        <p class="login-footer">Seção de Motomecanização - P4/GARAGEM</p>
+        <p class="login-footer">DA ZONA DA MATA AO SERTÃO!</p>
+    </div>
+
+ <script src="../js/login.js"></script>
+
+</body>
+
+</html>

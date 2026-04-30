@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório Diário de Frota — 10º BPM</title>
+    <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        /* ── RESET & VARS ── */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --azul: #1a2744;
+            --azul2: #2e3f6e;
+            --ouro: #c8a415;
+            --verde: #28a745;
+            --vermelho: #dc3545;
+            --cinza: #f0f2f5;
+            --sombra: 0 4px 14px rgba(0, 0, 0, .12);
+            --radius: 10px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: var(--cinza);
+            color: var(--azul);
+            min-height: 100vh
+        }
+
+        /* ── TOOLBAR (só tela) ── */
+        .toolbar {
+            background: var(--azul);
+            color: white;
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, .3)
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 14px
+        }
+
+        .toolbar-left img {
+            height: 44px
+        }
+
+        .toolbar-left h1 {
+            font-size: .95rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            line-height: 1.3
+        }
+
+        .toolbar-left h2 {
+            font-size: .75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            ;
+            margin-top: 2px
+        }
+
+        .toolbar-left p {
+            font-size: .7rem;
+            color: var(--ouro);
+            letter-spacing: .5px
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        .tb-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 7px;
+            font-size: .82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity .2s, transform .1s;
+            text-transform: uppercase;
+            letter-spacing: .4px
+        }
+
+        .tb-btn:hover {
+            opacity: .88
+        }
+
+        .tb-btn:active {
+            transform: scale(.97)
+        }
+
+        .tb-btn-imprimir {
+            background: var(--azul2);
+            color: white
+        }
+
+        .tb-btn-salvar {
+            background: var(--verde);
+            color: white
+        }
+
+        .tb-btn-voltar {
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+        }
+
+        .tb-btn-limpar {
+            background: var(--vermelho);
+            color: white
+        }
+
+        .tb-data {
+            background: rgba(255, 255, 255, .1);
+            border: 1px solid rgba(255, 255, 255, .3);
+            color: white;
+            padding: 7px 10px;
+            border-radius: 6px;
+            font-size: .82rem;
+            outline: none
+        }
+
+        .tb-data:focus {
+            border-color: var(--ouro)
+        }
+
+        /* ── CONTAINER DO RELATÓRIO ── */
+        .relatorio-wrap {
+            max-width: 1000px;
+            margin: 24px auto;
+            padding: 0 16px 40px
+        }
+
+        /* ── FOLHA ── */
+        .folha {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--sombra);
+            padding: 32px 36px;
+            margin-bottom: 28px
+        }
+
+        /* ── CABEÇALHO OFICIAL ── */
+        .cab-oficial {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--azul);
+            padding-bottom: 16px
+        }
+
+        .cab-brasao {
+            width: 72px;
+            flex-shrink: 0
+        }
+
+        .cab-texto {
+            flex: 1;
+            text-align: center
+        }
+
+        .cab-texto .ct-estado {
+            font-size: .75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #555
+        }
+
+        .cab-texto .ct-unidade {
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--azul);
+            margin: 3px 0
+        }
+
+        .cab-texto .ct-endereco {
+            font-size: .7rem;
+            color: #888;
+            margin-bottom: 6px
+        }
+
+        .cab-texto .ct-titulo {
+            font-size: .95rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--azul);
+            letter-spacing: .5px
+        }
+
+        .cab-texto .ct-subtitulo {
+            font-size: .82rem;
+            font-weight: 700;
+            color: var(--azul2);
+            margin-top: 2px
+        }
+
+        .cab-texto .ct-data {
+            font-size: .82rem;
+            font-weight: 700;
+            color: var(--azul);
+            margin-top: 6px;
+            display: block
+        }
+
+        .cab-edit-icon {
+            color: var(--ouro);
+            font-size: .9rem;
+            vertical-align: middle;
+            cursor: pointer;
+            opacity: .5;
+            transition: opacity .2s
+        }
+
+        .cab-edit-icon:hover {
+            opacity: 1
+        }
+
+        /* ── TOTAIS ── */
+        .totais-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 22px;
+            display: flex;
+            gap: 32px;
+            align-items: flex-start;
+            flex-wrap: wrap
+        }
+
+        .totais-section .ts-total {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--azul);
+            line-height: 1
+        }
+
+        .totais-section .ts-label {
+            font-size: .7rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-top: 2px
+        }
+
+        .totais-section .ts-divider {
+            width: 1px;
+            background: #ddd;
+            align-self: stretch
+        }
+
+        .ts-missoes {
+            flex: 1;
+            min-width: 200px
+        }
+
+        .ts-missoes-titulo {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--azul);
+            margin-bottom: 8px
+        }
+
+        .ts-missao-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 3px 0;
+            border-bottom: 1px dashed #eee;
+            font-size: .82rem
+        }
+
+        .ts-missao-item:last-child {
+            border-bottom: none
+        }
+
+        .ts-missao-num {
+            font-weight: 700;
+            color: var(--azul);
+            min-width: 30px;
+            text-align: right
+        }
+
+        /* ── LEGENDA DE ÁREAS ── */
+        .areas-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap
+        }
+
+        .area-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: .7rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 2px solid;
+            transition: all .15s
+        }
+
+        .area-I {
+            background: #e8f4fd;
+            border-color: #2196f3;
+            color: #1565c0
+        }
+
+        .area-II {
+            background: #f3e5f5;
+            border-color: #9c27b0;
+            color: #6a1b9a
+        }
+
+        .area-DISPOSICAO {
+            background: #e8f5e9;
+            border-color: #4caf50;
+            color: #1b5e20
+        }
+
+        /* ── TABELA PRINCIPAL ── */
+        .tabela-rel {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .8rem;
+            margin-bottom: 24px
+        }
+
+        .tabela-rel thead tr {
+            background: var(--azul);
+            color: white
+        }
+
+        .tabela-rel thead th {
+            padding: 9px 10px;
+            text-align: left;
+            font-weight: 600;
+            letter-spacing: .3px;
+            white-space: nowrap
+        }
+
+        .tabela-rel tbody tr {
+            transition: background .1s
+        }
+
+        .tabela-rel tbody tr:nth-child(even) {
+            background: #f9fbff
+        }
+
+        .tabela-rel tbody tr:hover {
+            background: #eef2ff
+        }
+
+        .tabela-rel tbody td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle
+        }
+
+        /* linha de área/seção */
+        .tr-area td {
+            background: #e9ecef;
+            font-weight: 700;
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--azul2);
+            padding: 5px 10px;
+            border-bottom: 1px solid #ddd
+        }
+
+        /* badges de destino */
+        .dest-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: .7rem;
+            font-weight: 700;
+            white-space: nowrap
+        }
+
+        .dest-BAIXADA {
+            background: #f8d7da;
+            color: #721c24
+        }
+
+        .dest-REVISAO {
+            background: #e2d9f3;
+            color: #3d1a78
+        }
+
+        .dest-FT {
+            background: #cfe2ff;
+            color: #084298
+        }
+
+        .dest-RP {
+            background: #d1ecf1;
+            color: #0c5460
+        }
+
+        .dest-TATICO {
+            background: #fff3cd;
+            color: #664d03
+        }
+
+        .dest-PENHA {
+            background: #d4edda;
+            color: #155724
+        }
+
+        .dest-SEDE {
+            background: #e9ecef;
+            color: #495057
+        }
+
+        .dest-OUTROS {
+            background: #f0f0f0;
+            color: #555
+        }
+
+        /* radio badge */
+        .radio-badge {
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--azul2)
+        }
+
+        .sem-radio {
+            font-size: .7rem;
+            color: #aaa;
+            font-style: italic
+        }
+
+        /* célula editável */
+        [contenteditable="true"] {
+            outline: none;
+            border-radius: 4px;
+            padding: 1px 3px;
+            transition: background .15s
+        }
+
+        [contenteditable="true"]:hover {
+            background: #fffbea
+        }
+
+        [contenteditable="true"]:focus {
+            background: #fffbea;
+            box-shadow: 0 0 0 2px var(--ouro)
+        }
+
+        .edit-hint {
+            position: relative
+        }
+
+        .edit-hint::after {
+            content: '✎';
+            font-size: .65rem;
+            color: var(--ouro);
+            opacity: 0;
+            margin-left: 3px;
+            transition: opacity .2s
+        }
+
+        .edit-hint:hover::after {
+            opacity: 1
+        }
+
+        /* ── RODAPÉ DO DOCUMENTO ── */
+        .rodape-doc {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #eee
+        }
+
+        .assinatura-box {
+            text-align: center;
+            padding: 12px
+        }
+
+        .assinatura-box .assin-linha {
+            border-top: 1.5px solid var(--azul);
+            margin: 28px auto 6px;
+            width: 80%
+        }
+
+        .assinatura-box .assin-nome {
+            font-size: .8rem;
+            font-weight: 700;
+            color: var(--azul)
+        }
+
+        .assinatura-box .assin-cargo {
+            font-size: .72rem;
+            color: #888
+        }
+
+        /* ── SUMÁRIO OPERACIONAL ── */
+        .sumario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 16px
+        }
+
+        .sumario-item {
+            background: #f8f9fa;
+            border-radius: 7px;
+            padding: 10px 12px;
+            text-align: center;
+            border-left: 4px solid
+        }
+
+        .sumario-item .si-num {
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1
+        }
+
+        .sumario-item .si-label {
+            font-size: .66rem;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            color: #888;
+            margin-top: 3px
+        }
+
+        .si-rp {
+            border-color: #2196f3
+        }
+
+        .si-rp .si-num {
+            color: #1565c0
+        }
+
+        .si-tu {
+            border-color: #9c27b0
+        }
+
+        .si-tu .si-num {
+            color: #6a1b9a
+        }
+
+        .si-tr {
+            border-color: #ff9800
+        }
+
+        .si-tr .si-num {
+            color: #e65100
+        }
+
+        .si-ft {
+            border-color: #4caf50
+        }
+
+        .si-ft .si-num {
+            color: #1b5e20
+        }
+
+        .si-bx {
+            border-color: #dc3545
+        }
+
+        .si-bx .si-num {
+            color: #721c24
+        }
+
+        .si-mn {
+            border-color: #6f42c1
+        }
+
+        .si-mn .si-num {
+            color: #432874
+        }
+
+        .si-rv {
+            border-color: #20c997
+        }
+
+        .si-rv .si-num {
+            color: #0a6747
+        }
+
+        .si-total {
+            border-color: var(--azul)
+        }
+
+        .si-total .si-num {
+            color: var(--azul)
+        }
+
+        /* ── BOTÃO ADICIONAR LINHA ── */
+        .btn-add-linha {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 14px;
+            background: var(--azul2);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: .76rem;
+            cursor: pointer;
+            font-weight: 700;
+            transition: background .2s;
+            margin-bottom: 8px
+        }
+
+        .btn-add-linha:hover {
+            background: var(--azul)
+        }
+
+        .btn-remove-linha {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #ccc;
+            padding: 2px;
+            transition: color .15s;
+            vertical-align: middle
+        }
+
+        .btn-remove-linha:hover {
+            color: var(--vermelho)
+        }
+
+        /* ── OBSERVAÇÕES ── */
+        .obs-area {
+            width: 100%;
+            min-height: 70px;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: .85rem;
+            font-family: inherit;
+            color: var(--azul);
+            resize: vertical;
+            outline: none;
+            transition: border-color .2s
+        }
+
+        .obs-area:focus {
+            border-color: var(--ouro)
+        }
+
+        /* ── SECAO TITULO ── */
+        .secao-titulo {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--ouro);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            margin: 20px 0 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .secao-titulo .material-icons {
+            font-size: .9rem
+        }
+
+        /* ── BADGE STATUS ── */
+        .st-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: .72rem;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 20px
+        }
+
+        .st-salvo {
+            background: #d4edda;
+            color: #155724
+        }
+
+        .st-editando {
+            background: #fff3cd;
+            color: #856404
+        }
+
+        /* ── PRINT ── */
+        @media print {
+
+            .toolbar,
+            .btn-add-linha,
+            .btn-remove-linha,
+            .no-print {
+                display: none !important
+            }
+
+            body {
+                background: white
+            }
+
+            .relatorio-wrap {
+                max-width: 100%;
+                margin: 0;
+                padding: 0
+            }
+
+            .folha {
+                box-shadow: none;
+                border-radius: 0;
+                padding: 20px 24px;
+                margin-bottom: 0;
+                page-break-after: avoid
+            }
+
+            [contenteditable] {
+                outline: none !important;
+                box-shadow: none !important;
+                background: transparent !important
+            }
+
+            .tabela-rel thead tr {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact
+            }
+
+            .tr-area td {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact
+            }
+
+            .dest-badge,
+            .st-badge {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact
+            }
+        }
+
+        @media(max-width:700px) {
+            .folha {
+                padding: 18px 14px
+            }
+
+            .cab-oficial {
+                flex-direction: column;
+                text-align: center
+            }
+
+            .rodape-doc {
+                grid-template-columns: 1fr
+            }
+
+            .totais-section {
+                flex-direction: column;
+                gap: 12px
+            }
+
+            .ts-divider {
+                display: none
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ── TOOLBAR (tela) ── -->
+    <div class="toolbar no-print">
+        <div class="toolbar-left">
+            <img src="/img/brasao.png" alt="Brasão">
+            <div>
+                <h1>Relatório Diário de Gestão de Frota</h1>
+                <h2>POLÍCIA MILITAR DE ALAGOAS</h2>
+                <p>10º Batalhão de Polícia Militar </p>
+            </div>
+        </div>
+        <div class="toolbar-right">
+            <input type="date" class="tb-data" id="tb-data" onchange="carregarDadosDoDia()">
+            <button class="tb-btn tb-btn-salvar" onclick="salvarRelatorio()">
+                <span class="material-icons" style="font-size:1rem">save</span> Salvar
+            </button>
+            <button class="tb-btn tb-btn-imprimir" onclick="window.print()">
+                <span class="material-icons" style="font-size:1rem">print</span> Imprimir
+            </button>
+            <button class="tb-btn tb-btn-limpar" onclick="novoRelatorio()">
+                <span class="material-icons" style="font-size:1rem">refresh</span> Novo
+            </button>
+            <a href="../page/mapa_diario.html" class="tb-btn tb-btn-voltar">Voltar</a>
+            <span class="st-badge st-editando" id="status-badge">
+                <span class="material-icons" style="font-size:.8rem">edit</span> Editando
+            </span>
+        </div>
+    </div>
+
+
+    <!-- ── RELATÓRIO ── -->
+    <div class="relatorio-wrap">
+        <div class="folha" id="folha-principal">
+
+            <!-- CABEÇALHO OFICIAL -->
+            <div class="cab-oficial">
+                <img class="cab-brasao" src="/img/brasao.png" alt="Brasão PMAL">
+                <div class="cab-texto">
+                    <div class="ct-estado">Estado de Alagoas</div>
+                    <div class="ct-estado">POLÍCIA MILITAR DE ALAGOAS</div>
+                    <div class="ct-unidade" id="cab-unidade" contenteditable="true">10º BATALHÃO DE POLÍCIA MILITAR
+                    </div>
+                    <div class="ct-titulo">GESTÃO DE FROTA — Distribuição das Viaturas</div>
+                    <span class="ct-data" id="cab-data-display">carregando...</span>
+                </div>
+            </div>
+
+            <!-- TOTAIS E MISSÕES DO DIA -->
+            <div class="totais-section">
+                <div>
+                    <div class="ts-total" id="rel-total">—</div>
+                    <div class="ts-label">Total de Viaturas</div>
+                </div>
+                <div class="ts-divider"></div>
+                <div class="ts-missoes">
+                    <div class="ts-missoes-titulo"
+                        style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                        <span style="display:flex;align-items:center;gap:4px">
+                            <span class="material-icons"
+                                style="font-size:.85rem;vertical-align:middle">assignment</span>
+                            Missões do Dia
+                        </span>
+                        <button onclick="toggleMissaoEdit()" id="btn-missao-edit" title="Editar missões do dia"
+                            style="background:none;border:1px solid var(--ouro);border-radius:5px;padding:2px 7px;cursor:pointer;font-size:.67rem;color:var(--ouro);display:flex;align-items:center;gap:3px;font-weight:700;transition:.15s">
+                            <span class="material-icons" style="font-size:.8rem">edit</span> Editar
+                        </button>
+                    </div>
+                    <!-- Exibição automática (contagens) -->
+                    <div id="tabela-missoes"></div>
+                    <!-- Textarea para missão descritiva editável -->
+                    <textarea id="missao-texto"
+                        placeholder="Acrescente informações da missão do dia, operações especiais, determinações, etc..."
+                        style="display:none;width:100%;min-height:80px;margin-top:6px;padding:7px 9px;border:1.5px solid var(--ouro);border-radius:7px;font-family:inherit;font-size:.8rem;resize:vertical;outline:none;background:#fffbea;color:var(--azul)"></textarea>
+                    <div id="missao-texto-display"
+                        style="display:none;margin-top:6px;padding:7px 9px;background:#fffbea;border-radius:7px;border:1px solid #fde68a;font-size:.8rem;color:#5c4a00;line-height:1.5;white-space:pre-wrap">
+                    </div>
+                </div>
+                <div class="ts-divider"></div>
+                <div style="flex:1;min-width:180px">
+                    <div class="ts-missoes-titulo">
+                        <span class="material-icons" style="font-size:.85rem;vertical-align:middle">notes</span>
+                        Observações Gerais
+                    </div>
+                    <textarea class="obs-area" id="obs-gerais"
+                        placeholder="Observações do dia, ocorrências, etc..."></textarea>
+                </div>
+            </div>
+
+            <!-- SUMÁRIO OPERACIONAL (A DISPOSIÇÃO) -->
+            <div class="secao-titulo">
+                <span class="material-icons">bar_chart</span>
+                A Disposição — Operacional (Automóveis)
+            </div>
+            <div class="sumario-grid" id="sumario-grid">
+                <!-- preenchido via JS -->
+            </div>
+
+            <!-- TABELA PRINCIPAL DE DISTRIBUIÇÃO -->
+            <div class="secao-titulo" style="margin-top:24px">
+                <span class="material-icons">table_view</span>
+                Distribuição das Viaturas
+            </div>
+
+            <div class="no-print" style="margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <button class="btn-add-linha" onclick="adicionarLinha()">
+                    <span class="material-icons" style="font-size:.9rem">add</span> Adicionar Linha
+                </button>
+                <button class="btn-add-linha" style="background:#6c757d" onclick="adicionarSeparadorArea()">
+                    <span class="material-icons" style="font-size:.9rem">horizontal_rule</span> Separador de Área
+                </button>
+                <span style="font-size:.72rem;color:#aaa">Clique em qualquer célula para editar</span>
+            </div>
+
+            <table class="tabela-rel" id="tabela-distribuicao">
+                <thead>
+                    <tr>
+                        <th>Área / Cidade</th>
+                        <th>Placa</th>
+                        <th>Prefixo</th>
+                        <th>Modelo</th>
+                        <th>Destino / Guarnição</th>
+                        <th>Nº do Rádio</th>
+                        <th class="no-print">⠿</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-distribuicao">
+                    <!-- preenchido via JS -->
+                </tbody>
+            </table>
+
+            <!-- RODAPÉ — ASSINATURA ELETRÔNICA -->
+            <div class="secao-titulo">
+                <span class="material-icons">verified_user</span>
+                Assinatura Eletrônica
+            </div>
+
+            <!-- Estado: não assinado -->
+            <div id="bloco-assinar" class="rodape-doc" style="align-items:center;justify-content:center">
+                <div style="text-align:center;padding:18px 0;width:100%">
+                    <p style="font-size:.8rem;color:#888;margin-bottom:14px">
+                        Este documento ainda <strong>não foi assinado eletronicamente</strong>.<br>
+                        Ao assinar, o relatório ficará bloqueado para edição.
+                    </p>
+                    <button class="tb-btn tb-btn-salvar no-print" onclick="abrirModalAssinar()"
+                        style="padding:10px 28px;font-size:.9rem;display:inline-flex;align-items:center;gap:6px">
+                        <span class="material-icons" style="font-size:1rem">draw</span>
+                        Assinar Eletronicamente
+                    </button>
+                </div>
+            </div>
+
+            <!-- Estado: assinado -->
+            <div id="bloco-assinado" style="display:none">
+                <div class="rodape-doc" id="assin-rodape-print">
+                    <div class="assinatura-box">
+                        <div class="assinatura-box" style="padding:0">
+                            <div style="font-size:.72rem;color:#888;margin-bottom:6px">Assinado eletronicamente por
+                            </div>
+                            <div class="assin-linha"></div>
+                            <div class="assin-nome" id="assin-nome-disp">—</div>
+                            <div class="assin-cargo" id="assin-cargo-disp">—</div>
+                        </div>
+                    </div>
+                    <div
+                        style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding-bottom:4px">
+                        <div id="assin-badge"
+                            style="background:#d4edda;border:1px solid #c3e6cb;border-radius:8px;padding:10px 18px;text-align:center">
+                            <div
+                                style="color:#155724;font-size:.72rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">
+                                <span class="material-icons"
+                                    style="font-size:.85rem;vertical-align:middle;margin-right:2px">verified</span>
+                                Assinatura Eletrônica Válida
+                            </div>
+                            <div id="assin-hash-disp"
+                                style="font-family:monospace;font-size:.68rem;color:#155724;word-break:break-all;max-width:320px">
+                            </div>
+                            <div id="assin-data-disp" style="font-size:.68rem;color:#888;margin-top:4px"></div>
+                        </div>
+                        <button class="no-print" onclick="abrirModalCorretor()"
+                            style="font-size:.7rem;background:none;border:1px solid #ccc;border-radius:6px;padding:5px 12px;cursor:pointer;color:#888;display:flex;align-items:center;gap:4px;transition:.15s"
+                            onmouseover="this.style.borderColor='#dc3545';this.style.color='#dc3545'"
+                            onmouseout="this.style.borderColor='#ccc';this.style.color='#888'">
+                            <span class="material-icons" style="font-size:.8rem">lock_open</span>
+                            Corrigir documento
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /folha-principal -->
+    </div><!-- /relatorio-wrap -->
+
+
+    <script>
+        // ================================================================
+        // FIREBASE
+        // ================================================================
+        const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
+        let _assinatura = null; // assinatura eletrônica do relatório atual
+        const fbGet = async p => (await fetch(`${FB_URL}/${p}.json`)).json();
+        const fbPut = async (p, d) => (await fetch(`${FB_URL}/${p}.json`, { method: 'PUT', body: JSON.stringify(d), headers: { 'Content-Type': 'application/json' } })).json();
+
+        // ================================================================
+        // MAPA DE DESTINOS PARA BADGE
+        // ================================================================
+        function destBadge(destino) {
+            const d = (destino || '').toUpperCase();
+            let cls = 'dest-OUTROS';
+            if (d.includes('BAIXADA')) cls = 'dest-BAIXADA';
+            else if (d.includes('REVISÃO') || d.includes('REVISAO') || d.includes('MANUTENÇÃO')) cls = 'dest-REVISAO';
+            else if (d.includes('FORÇA') || d.includes('FORCA') || d.includes('FT')) cls = 'dest-FT';
+            else if (d.includes('RP ') || d.startsWith('RP')) cls = 'dest-RP';
+            else if (d.includes('TÁTICO') || d.includes('TATICO')) cls = 'dest-TATICO';
+            else if (d.includes('PENHA')) cls = 'dest-PENHA';
+            else if (d.includes('SEDE') || d.includes('OFICIAL') || d.includes('COMANDANTE')) cls = 'dest-SEDE';
+            return `<span class="dest-badge ${cls}">${destino || '—'}</span>`;
+        }
+
+        // ================================================================
+        // ESTADO
+        // ================================================================
+        let _dataSelecionada = '';
+        let _dadosOriginais = [];   // vindos do Firebase mapa_diario
+
+        // ================================================================
+        // INIT
+        // ================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Pega data da URL ou usa hoje
+            const params = new URLSearchParams(window.location.search);
+            const dataUrl = params.get('data') || hojeISO();
+            _dataSelecionada = dataUrl;
+            document.getElementById('tb-data').value = dataUrl;
+            atualizarDataDisplay(dataUrl);
+            carregarDadosDoDia();
+            carregarRelatorioSalvo(dataUrl);
+        });
+
+        function hojeISO() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        function atualizarDataDisplay(iso) {
+            if (!iso) return;
+            const [y, m, d] = iso.split('-');
+            const dt = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+            const opts = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
+            document.getElementById('cab-data-display').textContent =
+                dt.toLocaleDateString('pt-BR', opts).toUpperCase();
+        }
+
+        // ================================================================
+        // CARREGAR DADOS DO MAPA DIÁRIO DO DIA
+        // ================================================================
+        async function carregarDadosDoDia() {
+            const data = document.getElementById('tb-data').value;
+            if (!data) return;
+            _dataSelecionada = data;
+            atualizarDataDisplay(data);
+
+            try {
+                const raw = await fbGet('mapa_diario');
+                if (!raw) { _dadosOriginais = []; renderizarTabela([]); atualizarSumario([]); return; }
+
+                // Filtra pelo dia selecionado (campo dataAgendamento ou dataHora)
+                const lista = Object.entries(raw)
+                    .map(([id, v]) => ({ id, ...v }))
+                    .filter(v => {
+                        const dAg = (v.dataAgendamento || '').substring(0, 10);
+                        const dHr = (v.dataHora || '').substring(0, 10);
+                        return dAg === data || dHr === data;
+                    })
+                    .sort((a, b) => (a.guarnicao || '').localeCompare(b.guarnicao || ''));
+
+                _dadosOriginais = lista;
+
+                // Carrega o relatório salvo para o dia (pode sobrescrever com edições manuais)
+                const salvo = await carregarRelatorioSalvo(data);
+                if (!salvo) {
+                    // Sem relatório salvo: monta a partir do mapa_diario
+                    renderizarTabela(lista);
+                    atualizarSumario(lista);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // ================================================================
+        // RENDERIZAR TABELA A PARTIR DOS DADOS DO MAPA
+        // ================================================================
+        function renderizarTabela(lista) {
+            const tbody = document.getElementById('tbody-distribuicao');
+            tbody.innerHTML = '';
+
+            if (!lista.length) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:#aaa">
+            Nenhum lançamento encontrado para esta data.<br>
+            <small>Clique em "+ Adicionar Linha" para inserir manualmente.</small></td></tr>`;
+                atualizarTotais([]);
+                return;
+            }
+
+            // Agrupa por guarnição para inserir separadores de área
+            let areaAtual = '';
+            lista.forEach((v, i) => {
+                const area = v.area || derivarArea(v.guarnicao);
+                if (area !== areaAtual) {
+                    areaAtual = area;
+                    tbody.innerHTML += `<tr class="tr-area" data-tipo="separador">
+                <td colspan="6">${area}</td>
+                <td class="no-print"><button class="btn-remove-linha" onclick="removerLinha(this)" title="Remover separador">
+                    <span class="material-icons" style="font-size:.9rem">close</span></button></td>
+            </tr>`;
+                }
+                tbody.innerHTML += criarLinhaHTML(v, i);
+            });
+
+            atualizarTotais(lista);
+            atualizarSumario(lista);
+            document.getElementById('rel-total').textContent = lista.length;
+        }
+
+        function derivarArea(guarnicao) {
+            const g = (guarnicao || '').toUpperCase();
+            if (g.includes('MARIBONDO')) return 'MARIBONDO';
+            if (g.includes('IGACI')) return 'IGACI';
+            if (g.includes('CACIMBINHAS')) return 'CACIMBINHAS';
+            if (g.includes('ESTRELA')) return 'ESTRELA / MINADOR DO NEGRÃO';
+            if (g.includes('BELÉM') || g.includes('TANQUE')) return 'BELÉM / TANQUE D\'ARCA';
+            if (g.includes('QUEBRANGULO')) return 'QUEBRANGULO';
+            if (g.includes('JACINTO') || g.includes('VERMELHO')) return 'P. JACINTO / MAR. VERMELHO';
+            return 'PALMEIRA DOS ÍNDIOS';
+        }
+
+        function criarLinhaHTML(v, idx) {
+            const radio = v.radio || v.numeroRadio || '';
+            const radioHtml = radio
+                ? `<span class="radio-badge">${radio}</span>`
+                : `<span class="sem-radio">S/RÁDIO</span>`;
+            return `<tr data-tipo="viatura" data-idx="${idx}">
+        <td class="edit-hint" contenteditable="true">${v.area || derivarArea(v.guarnicao) || '—'}</td>
+        <td class="edit-hint" contenteditable="true">${v.placa || '—'}</td>
+        <td class="edit-hint" contenteditable="true"><strong>${v.prefixo || '—'}</strong></td>
+        <td class="edit-hint" contenteditable="true">${v.modelo || '—'}</td>
+        <td class="edit-hint" contenteditable="true">${v.guarnicao || v.destino || '—'}</td>
+        <td class="edit-hint" contenteditable="true">${radio || 'S/RÁDIO'}</td>
+        <td class="no-print" style="text-align:center">
+            <button class="btn-remove-linha" onclick="removerLinha(this)" title="Remover linha">
+                <span class="material-icons" style="font-size:.9rem">delete_outline</span>
+            </button>
+        </td>
+    </tr>`;
+        }
+
+        // ================================================================
+        // SUMÁRIO OPERACIONAL
+        // ================================================================
+        function atualizarSumario(lista) {
+            const guarnicoes = lista.map(v => (v.guarnicao || '').toUpperCase());
+
+            const contar = (...termos) => guarnicoes.filter(g => termos.some(t => g.includes(t))).length;
+
+            const rp = contar('RP ');
+            const tu = contar('TÁTICO URBANO', 'TATICO URBANO');
+            const tr = contar('TÁTICO RURAL', 'TATICO RURAL');
+            const ft = contar('FORÇA TAREFA', 'FORCA TAREFA', 'FT');
+            const bx = contar('BAIXADA');
+            const mn = contar('MANUTENÇÃO', 'MANUTENCAO', 'REVISÃO', 'REVISAO');
+            const rv = contar('RESERVA');
+            const total = rp + tu + tr + ft;
+
+            const itens = [
+                { cls: 'si-rp', num: rp, label: 'RPs' },
+                { cls: 'si-tu', num: tu, label: 'Tático Urbano' },
+                { cls: 'si-tr', num: tr, label: 'Tático Rural' },
+                { cls: 'si-ft', num: ft, label: 'Força Tarefa' },
+                { cls: 'si-bx', num: bx, label: 'Baixadas' },
+                { cls: 'si-mn', num: mn, label: 'Manutenção' },
+                { cls: 'si-rv', num: rv, label: 'Reservas' },
+                { cls: 'si-total', num: total, label: 'Total Opercional' },
+            ];
+
+            document.getElementById('sumario-grid').innerHTML = itens.map(i => `
+        <div class="sumario-item ${i.cls}">
+            <div class="si-num">${i.num}</div>
+            <div class="si-label">${i.label}</div>
+        </div>`).join('');
+
+            // Missões do dia
+            const missoes = [
+                { label: 'Força Tarefa', num: ft, cor: '#4caf50' },
+                { label: 'Baixadas', num: bx, cor: '#dc3545' },
+                { label: 'Manutenção', num: mn, cor: '#6f42c1' },
+                { label: 'Reservas', num: rv, cor: '#6c757d' },
+            ].filter(m => m.num > 0);
+
+            document.getElementById('tabela-missoes').innerHTML = missoes.map(m => `
+        <div class="ts-missao-item">
+            <span style="color:${m.cor};font-weight:700">${m.label}:</span>
+            <span class="ts-missao-num">${String(m.num).padStart(2, '0')}</span>
+        </div>`).join('') || '<div style="color:#aaa;font-size:.78rem">Sem missões especiais.</div>';
+        }
+
+        function atualizarTotais(lista) {
+            document.getElementById('rel-total').textContent = lista.length || lerLinhasTabela().length;
+            atualizarSumario(lista.length ? lista : lerLinhasTabela().map(r => ({ guarnicao: r.destino })));
+        }
+
+        // ================================================================
+        // OPERAÇÕES NA TABELA
+        // ================================================================
+        function adicionarLinha() {
+            const tbody = document.getElementById('tbody-distribuicao');
+            // Remove placeholder se existir
+            const vazio = tbody.querySelector('td[colspan]');
+            if (vazio) vazio.closest('tr').remove();
+
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-tipo', 'viatura');
+            tr.innerHTML = `
+        <td class="edit-hint" contenteditable="true">P. DOS ÍNDIOS</td>
+        <td class="edit-hint" contenteditable="true">AAA-0000</td>
+        <td class="edit-hint" contenteditable="true"><strong>00-0000</strong></td>
+        <td class="edit-hint" contenteditable="true">MODELO</td>
+        <td class="edit-hint" contenteditable="true">GUARNIÇÃO</td>
+        <td class="edit-hint" contenteditable="true">S/RÁDIO</td>
+        <td class="no-print" style="text-align:center">
+            <button class="btn-remove-linha" onclick="removerLinha(this)" title="Remover">
+                <span class="material-icons" style="font-size:.9rem">delete_outline</span>
+            </button>
+        </td>`;
+            tbody.appendChild(tr);
+            // Foca na placa da nova linha
+            tr.querySelectorAll('[contenteditable]')[1].focus();
+        }
+
+        function adicionarSeparadorArea() {
+            const tbody = document.getElementById('tbody-distribuicao');
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-tipo', 'separador');
+            tr.className = 'tr-area';
+            tr.innerHTML = `
+        <td colspan="6" contenteditable="true">NOVA ÁREA</td>
+        <td class="no-print"><button class="btn-remove-linha" onclick="removerLinha(this)" title="Remover separador">
+            <span class="material-icons" style="font-size:.9rem">close</span></button></td>`;
+            tbody.appendChild(tr);
+            tr.querySelector('[contenteditable]').focus();
+        }
+
+        function removerLinha(btn) {
+            btn.closest('tr').remove();
+            atualizarTotais(lerLinhasTabela().map(r => ({ guarnicao: r.destino })));
+        }
+
+        // ================================================================
+        // LER LINHAS ATUAIS DA TABELA (para salvar)
+        // ================================================================
+        function lerLinhasTabela() {
+            const rows = document.querySelectorAll('#tbody-distribuicao tr');
+            const result = [];
+            rows.forEach(tr => {
+                const tipo = tr.getAttribute('data-tipo');
+                if (tipo === 'separador') {
+                    result.push({ tipo: 'separador', texto: tr.querySelector('td').textContent.trim() });
+                } else {
+                    const tds = tr.querySelectorAll('td:not(.no-print)');
+                    if (tds.length >= 6) {
+                        result.push({
+                            tipo: 'viatura',
+                            area: tds[0].textContent.trim(),
+                            placa: tds[1].textContent.trim(),
+                            prefixo: tds[2].textContent.trim(),
+                            modelo: tds[3].textContent.trim(),
+                            destino: tds[4].textContent.trim(),
+                            radio: tds[5].textContent.trim(),
+                        });
+                    }
+                }
+            });
+            return result;
+        }
+
+        // ================================================================
+        // EDIÇÃO DAS MISSÕES DO DIA
+        // ================================================================
+        let _missaoEditando = false;
+
+        function toggleMissaoEdit() {
+            _missaoEditando = !_missaoEditando;
+            const textarea = document.getElementById('missao-texto');
+            const display = document.getElementById('missao-texto-display');
+            const btn = document.getElementById('btn-missao-edit');
+
+            if (_missaoEditando) {
+                // Mostra textarea para edição
+                textarea.style.display = 'block';
+                display.style.display = 'none';
+                btn.innerHTML = '<span class="material-icons" style="font-size:.8rem">check</span> OK';
+                btn.style.borderColor = 'var(--success)';
+                btn.style.color = 'var(--success)';
+                textarea.focus();
+            } else {
+                // Confirma edição — mostra o texto formatado
+                const texto = textarea.value.trim();
+                if (texto) {
+                    display.textContent = texto;
+                    display.style.display = 'block';
+                } else {
+                    display.style.display = 'none';
+                }
+                textarea.style.display = 'none';
+                btn.innerHTML = '<span class="material-icons" style="font-size:.8rem">edit</span> Editar';
+                btn.style.borderColor = 'var(--ouro)';
+                btn.style.color = 'var(--ouro)';
+            }
+        }
+
+        // Sincroniza o display ao carregar texto salvo
+        function atualizarMissaoDisplay() {
+            const textarea = document.getElementById('missao-texto');
+            const display = document.getElementById('missao-texto-display');
+            const texto = textarea ? textarea.value.trim() : '';
+            if (texto && display) {
+                display.textContent = texto;
+                display.style.display = 'block';
+            }
+        }
+
+        // ================================================================
+        // SALVAR RELATÓRIO NO FIREBASE
+        // ================================================================
+        async function salvarRelatorio() {
+            const badge = document.getElementById('status-badge');
+            badge.className = 'st-badge st-editando';
+            badge.innerHTML = '<span class="material-icons" style="font-size:.8rem">sync</span> Salvando...';
+
+            const payload = {
+                data: _dataSelecionada,
+                cabUnidade: document.getElementById('cab-unidade').textContent.trim(),
+                missaoTexto: (document.getElementById('missao-texto') || {}).value || '',
+                obsGerais: document.getElementById('obs-gerais').value,
+                linhas: lerLinhasTabela(),
+                salvoEm: new Date().toISOString(),
+                salvoPor: localStorage.getItem('frota_usuario') || 'Sistema',
+                assinatura: _assinatura || null,  // preserva assinatura existente
+            };
+
+            try {
+                await fbPut(`relatorios_diarios/${_dataSelecionada.replace(/-/g, '_')}`, payload);
+                badge.className = 'st-badge st-salvo';
+                badge.innerHTML = '<span class="material-icons" style="font-size:.8rem">check_circle</span> Salvo';
+                setTimeout(() => {
+                    badge.className = 'st-badge st-editando';
+                    badge.innerHTML = '<span class="material-icons" style="font-size:.8rem">edit</span> Editando';
+                }, 3000);
+            } catch (e) {
+                badge.className = 'st-badge';
+                badge.style.background = '#f8d7da';
+                badge.style.color = '#721c24';
+                badge.innerHTML = '⚠️ Erro ao salvar';
+                console.error(e);
+            }
+        }
+
+        // ================================================================
+        // CARREGAR RELATÓRIO SALVO
+        // ================================================================
+        async function carregarRelatorioSalvo(data) {
+            if (!data) return false;
+            try {
+                const chave = data.replace(/-/g, '_');
+                const salvo = await fbGet(`relatorios_diarios/${chave}`);
+                if (!salvo) return false;
+
+                // Preenche campos editáveis
+                if (salvo.cabUnidade) document.getElementById('cab-unidade').textContent = salvo.cabUnidade;
+                if (salvo.missaoTexto) { document.getElementById('missao-texto').value = salvo.missaoTexto; atualizarMissaoDisplay(); }
+                if (salvo.obsGerais) document.getElementById('obs-gerais').value = salvo.obsGerais;
+                // Restaura assinatura eletrônica se existente
+                if (salvo.assinatura && salvo.assinatura.hash) {
+                    _assinatura = salvo.assinatura;
+                    aplicarEstadoAssinado();
+                } else {
+                    _assinatura = null;
+                    aplicarEstadoNaoAssinado();
+                }
+
+                // Reconstrói a tabela
+                if (salvo.linhas && salvo.linhas.length) {
+                    const tbody = document.getElementById('tbody-distribuicao');
+                    tbody.innerHTML = '';
+                    salvo.linhas.forEach((l, i) => {
+                        if (l.tipo === 'separador') {
+                            tbody.innerHTML += `<tr class="tr-area" data-tipo="separador">
+                        <td colspan="6" contenteditable="true">${l.texto || ''}</td>
+                        <td class="no-print"><button class="btn-remove-linha" onclick="removerLinha(this)">
+                            <span class="material-icons" style="font-size:.9rem">close</span></button></td>
+                    </tr>`;
+                        } else {
+                            tbody.innerHTML += `<tr data-tipo="viatura">
+                        <td class="edit-hint" contenteditable="true">${l.area || ''}</td>
+                        <td class="edit-hint" contenteditable="true">${l.placa || ''}</td>
+                        <td class="edit-hint" contenteditable="true"><strong>${l.prefixo || ''}</strong></td>
+                        <td class="edit-hint" contenteditable="true">${l.modelo || ''}</td>
+                        <td class="edit-hint" contenteditable="true">${l.destino || ''}</td>
+                        <td class="edit-hint" contenteditable="true">${l.radio || ''}</td>
+                        <td class="no-print" style="text-align:center">
+                            <button class="btn-remove-linha" onclick="removerLinha(this)">
+                                <span class="material-icons" style="font-size:.9rem">delete_outline</span>
+                            </button>
+                        </td>
+                    </tr>`;
+                        }
+                    });
+                    atualizarTotais(salvo.linhas.filter(l => l.tipo === 'viatura').map(l => ({ guarnicao: l.destino })));
+                }
+
+                const badge = document.getElementById('status-badge');
+                badge.className = 'st-badge st-salvo';
+                badge.innerHTML = `<span class="material-icons" style="font-size:.8rem">check_circle</span> Salvo em ${new Date(salvo.salvoEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`;
+
+                return true;
+            } catch (e) {
+                console.warn('Sem relatório salvo para este dia.');
+                return false;
+            }
+        }
+
+        // ================================================================
+        // NOVO RELATÓRIO (LIMPA EDIÇÕES MANUAIS E RECARREGA DO MAPA)
+        // ================================================================
+        function novoRelatorio() {
+            _assinatura = null;
+            aplicarEstadoNaoAssinado();
+            if (!confirm('Descartar edições manuais e recarregar do Mapa Diário?\nOs dados já salvos no Firebase serão substituídos.')) return;
+            document.getElementById('obs-gerais').value = '';
+            renderizarTabela(_dadosOriginais);
+            document.getElementById('status-badge').className = 'st-badge st-editando';
+            document.getElementById('status-badge').innerHTML = '<span class="material-icons" style="font-size:.8rem">edit</span> Editando';
+        }
+
+        // Salva automaticamente com Ctrl+S
+        document.addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); salvarRelatorio(); }
+        });
+
+        // ================================================================
+        // ASSINATURA ELETRÔNICA
+        // ================================================================
+
+        // Gera hash SHA-256 em hex (Web Crypto API)
+        async function sha256(text) {
+            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function mascararCPF(input) {
+            let v = input.value.replace(/\D/g, '').slice(0, 11);
+            if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+            else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+            else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+            input.value = v;
+        }
+
+        function toggleSenhaVis(inputId, btn) {
+            const inp = document.getElementById(inputId);
+            const showing = inp.type === 'text';
+            inp.type = showing ? 'password' : 'text';
+            btn.querySelector('.material-icons').textContent = showing ? 'visibility' : 'visibility_off';
+        }
+
+        // ── Busca usuário no Firebase por CPF ──────────────────────────
+        async function buscarUsuarioPorCPF(cpfRaw) {
+            const cpfLimpo = cpfRaw.replace(/\D/g, '');
+            const todos = await fbGet('usuarios') || {};
+            for (const [id, u] of Object.entries(todos)) {
+                const uCpf = (u.cpf || '').replace(/\D/g, '');
+                if (uCpf === cpfLimpo) return { id, ...u };
+            }
+            return null;
+        }
+
+        // ── Verifica senha: hash SHA-256 do CPF+senha ou campo senhaHash ─
+        async function verificarSenha(usuario, senhaDigitada) {
+            // Suporta: campo "senha" em texto (legado) ou "senhaHash" (SHA-256)
+            if (usuario.senhaHash) {
+                const h = await sha256(senhaDigitada);
+                return h === usuario.senhaHash;
+            }
+            if (usuario.senha) {
+                return usuario.senha === senhaDigitada;
+            }
+            return false;
+        }
+
+        // ── Aplicar estado ASSINADO (bloqueia edição) ──────────────────
+        function aplicarEstadoAssinado() {
+            if (!_assinatura) return;
+
+            // Oculta botão assinar, exibe bloco assinado
+            document.getElementById('bloco-assinar').style.display = 'none';
+            document.getElementById('bloco-assinado').style.display = '';
+
+            // Preenche campos do bloco assinado (suporta formato novo e legado)
+            document.getElementById('assin-nome-disp').textContent =
+                _assinatura.nomeCompleto || _assinatura.nome || '—';
+            document.getElementById('assin-cargo-disp').textContent =
+                _assinatura.cargo ||
+                [_assinatura.posto, _assinatura.matricula ? 'Mat. ' + _assinatura.matricula : '']
+                .filter(Boolean).join(' — ');
+            document.getElementById('assin-hash-disp').textContent = 'Hash: ' + (_assinatura.hash || '').slice(0, 32) + '…';
+            const dt = _assinatura.assinadoEm ? new Date(_assinatura.assinadoEm) : null;
+            document.getElementById('assin-data-disp').textContent = dt
+                ? `Assinado em ${dt.toLocaleDateString('pt-BR')} às ${dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                : '';
+
+            // Dica no modal corretor
+            document.getElementById('corr-nome-hint').textContent = _assinatura.nomeCompleto || 'o signatário';
+
+            // Salvar botão e badge
+            const badge = document.getElementById('status-badge');
+            badge.className = 'st-badge';
+            badge.style.background = '#d4edda';
+            badge.style.color = '#155724';
+            badge.innerHTML = '<span class="material-icons" style="font-size:.8rem">verified</span> Assinado';
+
+            // Bloqueia TODOS os contenteditable
+            document.querySelectorAll('[contenteditable]').forEach(el => {
+                el.setAttribute('contenteditable', 'false');
+                el.style.cursor = 'default';
+            });
+            // Bloqueia textareas e selects (apenas dentro do documento, não nos modais)
+            document.querySelectorAll('textarea, select, input:not(#tb-data)').forEach(el => {
+                if (!el.closest('#modal-assinar, #modal-corretor')) {
+                    el.setAttribute('disabled', 'disabled');
+                }
+            });
+
+            // Esconde botão Salvar e botões de edição de linha
+            const btnSalvar = document.querySelector('.tb-btn-salvar');
+            if (btnSalvar) btnSalvar.style.display = 'none';
+            document.querySelectorAll('.btn-add-linha, .btn-remove-linha, .btn-add-area').forEach(el => el.style.display = 'none');
+        }
+
+        // ── Aplicar estado NÃO ASSINADO (libera edição) ───────────────
+        function aplicarEstadoNaoAssinado() {
+            document.getElementById('bloco-assinar').style.display = '';
+            document.getElementById('bloco-assinado').style.display = 'none';
+
+            const badge = document.getElementById('status-badge');
+            badge.className = 'st-badge st-editando';
+            badge.style.background = '';
+            badge.style.color = '';
+            badge.innerHTML = '<span class="material-icons" style="font-size:.8rem">edit</span> Editando';
+
+            document.querySelectorAll('[contenteditable="false"]').forEach(el => {
+                el.setAttribute('contenteditable', 'true');
+                el.style.cursor = '';
+            });
+            document.querySelectorAll('textarea[disabled], select[disabled], input[disabled]').forEach(el => {
+                if (!el.closest('#modal-assinar, #modal-corretor')) {
+                    el.removeAttribute('disabled');
+                }
+            });
+
+            const btnSalvar = document.querySelector('.tb-btn-salvar');
+            if (btnSalvar) btnSalvar.style.display = '';
+            document.querySelectorAll('.btn-add-linha, .btn-remove-linha, .btn-add-area').forEach(el => el.style.display = '');
+        }
+
+        // ── Modal Assinar ─────────────────────────────────────────────
+        function abrirModalAssinar() {
+            document.getElementById('ass-cpf').value = '';
+            document.getElementById('ass-senha').value = '';
+            document.getElementById('ass-msg').textContent = '';
+            document.getElementById('modal-assinar').style.display = 'flex';
+            setTimeout(() => document.getElementById('ass-cpf').focus(), 50);
+        }
+        function fecharModalAssinar() {
+            document.getElementById('modal-assinar').style.display = 'none';
+        }
+
+        async function confirmarAssinatura() {
+            const cpf = document.getElementById('ass-cpf').value;
+            const senha = document.getElementById('ass-senha').value;
+            const msg = document.getElementById('ass-msg');
+            const btn = document.getElementById('btn-confirmar-ass');
+
+            if (!cpf || !senha) { msg.textContent = '⚠️ Preencha CPF e senha.'; return; }
+
+            btn.disabled = true;
+            btn.textContent = 'Verificando...';
+            msg.style.color = '#555';
+            msg.textContent = '⏳ Autenticando...';
+
+            try {
+                const usuario = await buscarUsuarioPorCPF(cpf);
+                if (!usuario) {
+                    msg.style.color = '#dc3545';
+                    msg.textContent = '❌ CPF não encontrado no sistema.';
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-icons" style="font-size:1rem">draw</span> Assinar e Bloquear';
+                    return;
+                }
+                const ok = await verificarSenha(usuario, senha);
+                if (!ok) {
+                    msg.style.color = '#dc3545';
+                    msg.textContent = '❌ Senha incorreta.';
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-icons" style="font-size:1rem">draw</span> Assinar e Bloquear';
+                    return;
+                }
+
+                // Gera hash: CPF + data + conteúdo resumido
+                const conteudo = `${cpf}|${_dataSelecionada}|${document.getElementById('cab-unidade').textContent}|${Date.now()}`;
+                const hash = await sha256(conteudo);
+                const cpfLimpo = cpf.replace(/\D/g, '');
+                const cpfMask = cpfLimpo.replace(/(\d{3})\d{3}(\d{3})(\d{2})/, '$1.***.$3-$4'); // mascara dígitos do meio
+
+                _assinatura = {
+                    hash,
+                    cpf: cpfMask,
+                    cpfCompleto: cpfLimpo,
+                    nomeCompleto: usuario.nomeCompleto || usuario.usuario || cpf,
+                    posto: usuario.posto || '',
+                    matricula: usuario.matricula || '',
+                    assinadoEm: new Date().toISOString(),
+                };
+
+                // Salva e bloqueia
+                await salvarRelatorio();
+                aplicarEstadoAssinado();
+                fecharModalAssinar();
+
+            } catch (e) {
+                msg.style.color = '#dc3545';
+                msg.textContent = '❌ Erro: ' + e.message;
+                console.error(e);
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons" style="font-size:1rem">draw</span> Assinar e Bloquear';
+        }
+
+        // ── Modal Corretor (retirar assinatura) ───────────────────────
+        function abrirModalCorretor() {
+            document.getElementById('corr-cpf').value = '';
+            document.getElementById('corr-senha').value = '';
+            document.getElementById('corr-msg').textContent = '';
+            document.getElementById('modal-corretor').style.display = 'flex';
+            setTimeout(() => document.getElementById('corr-cpf').focus(), 50);
+        }
+        function fecharModalCorretor() {
+            document.getElementById('modal-corretor').style.display = 'none';
+        }
+
+        async function confirmarCorrecao() {
+            const cpf = document.getElementById('corr-cpf').value;
+            const senha = document.getElementById('corr-senha').value;
+            const msg = document.getElementById('corr-msg');
+            const btn = document.getElementById('btn-confirmar-corr');
+
+            if (!cpf || !senha) { msg.textContent = '⚠️ Preencha CPF e senha.'; return; }
+
+            btn.disabled = true;
+            btn.textContent = 'Verificando...';
+
+            try {
+                // Confere se o CPF bate com quem assinou
+                const cpfLimpo = cpf.replace(/\D/g, '');
+                if (_assinatura && _assinatura.cpfCompleto && _assinatura.cpfCompleto !== cpfLimpo) {
+                    msg.style.color = '#dc3545';
+                    msg.textContent = '❌ Somente quem assinou pode corrigir este documento.';
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-icons" style="font-size:1rem">lock_open</span> Desbloquear e Editar';
+                    return;
+                }
+
+                const usuario = await buscarUsuarioPorCPF(cpf);
+                if (!usuario) {
+                    msg.style.color = '#dc3545';
+                    msg.textContent = '❌ CPF não encontrado no sistema.';
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-icons" style="font-size:1rem">lock_open</span> Desbloquear e Editar';
+                    return;
+                }
+                const ok = await verificarSenha(usuario, senha);
+                if (!ok) {
+                    msg.style.color = '#dc3545';
+                    msg.textContent = '❌ Senha incorreta.';
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-icons" style="font-size:1rem">lock_open</span> Desbloquear e Editar';
+                    return;
+                }
+
+                // Remove assinatura e desbloqueia
+                _assinatura = null;
+                aplicarEstadoNaoAssinado();
+                await salvarRelatorio(); // salva sem assinatura
+                fecharModalCorretor();
+
+            } catch (e) {
+                msg.style.color = '#dc3545';
+                msg.textContent = '❌ Erro: ' + e.message;
+                console.error(e);
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons" style="font-size:1rem">lock_open</span> Desbloquear e Editar';
+        }
+
+        // Fecha modais ao clicar no overlay
+        document.getElementById('modal-assinar').addEventListener('click', function (e) { if (e.target === this) fecharModalAssinar(); });
+        document.getElementById('modal-corretor').addEventListener('click', function (e) { if (e.target === this) fecharModalCorretor(); });
+
+    </script>
+
+
+    <!-- ══ MODAL ASSINAR ══════════════════════════════════════════════════ -->
+    <div id="modal-assinar"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:900;align-items:center;justify-content:center;padding:16px">
+        <div
+            style="background:white;border-radius:14px;max-width:420px;width:100%;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.4);animation:mIn .25s ease">
+            <div
+                style="background:#1a2744;color:white;padding:16px 22px;display:flex;justify-content:space-between;align-items:center">
+                <h3
+                    style="font-size:.98rem;font-weight:700;display:flex;align-items:center;gap:6px;font-family:'Barlow Condensed',sans-serif">
+                    <span class="material-icons" style="font-size:1.1rem">verified_user</span>
+                    Assinar Eletronicamente
+                </h3>
+                <button onclick="fecharModalAssinar()"
+                    style="background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:1.3rem;line-height:1">✕</button>
+            </div>
+            <div style="padding:24px">
+                <p style="font-size:.82rem;color:#555;margin-bottom:20px;line-height:1.55">
+                    Informe seu <strong>CPF</strong> e <strong>senha</strong> cadastrados no sistema.<br>
+                    O documento ficará <strong>bloqueado para edição</strong> após a assinatura.
+                </p>
+                <div style="margin-bottom:14px">
+                    <label
+                        style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#1a2744;display:block;margin-bottom:5px">CPF</label>
+                    <input type="text" id="ass-cpf" placeholder="000.000.000-00" maxlength="14"
+                        style="width:100%;padding:10px 13px;border:1.5px solid #ddd;border-radius:9px;font-size:.9rem;outline:none;font-family:inherit"
+                        oninput="mascararCPF(this)"
+                        onkeydown="if(event.key==='Enter') document.getElementById('ass-senha').focus()">
+                </div>
+                <div style="margin-bottom:14px">
+                    <label
+                        style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#1a2744;display:block;margin-bottom:5px">Senha</label>
+                    <div style="position:relative">
+                        <input type="password" id="ass-senha" placeholder="••••••••"
+                            style="width:100%;padding:10px 36px 10px 13px;border:1.5px solid #ddd;border-radius:9px;font-size:.9rem;outline:none;font-family:inherit"
+                            onkeydown="if(event.key==='Enter') confirmarAssinatura()">
+                        <button onclick="toggleSenhaVis('ass-senha',this)"
+                            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#999">
+                            <span class="material-icons" style="font-size:1rem">visibility</span>
+                        </button>
+                    </div>
+                </div>
+                <p id="ass-msg" style="font-size:.8rem;min-height:18px;padding:6px 0;color:#dc3545"></p>
+            </div>
+            <div style="padding:0 24px 24px;display:flex;gap:10px">
+                <button onclick="fecharModalAssinar()"
+                    style="padding:10px 18px;background:#eee;border:none;border-radius:9px;cursor:pointer;font-size:.88rem">Cancelar</button>
+                <button onclick="confirmarAssinatura()" id="btn-confirmar-ass"
+                    style="flex:1;padding:10px;background:#1a2744;color:white;border:none;border-radius:9px;cursor:pointer;font-size:.9rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px">
+                    <span class="material-icons" style="font-size:1rem">draw</span>
+                    Assinar e Bloquear
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ MODAL CORRETOR (retirar assinatura) ════════════════════════════ -->
+    <div id="modal-corretor"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:900;align-items:center;justify-content:center;padding:16px">
+        <div
+            style="background:white;border-radius:14px;max-width:420px;width:100%;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.4);animation:mIn .25s ease">
+            <div
+                style="background:#dc3545;color:white;padding:16px 22px;display:flex;justify-content:space-between;align-items:center">
+                <h3
+                    style="font-size:.98rem;font-weight:700;display:flex;align-items:center;gap:6px;font-family:'Barlow Condensed',sans-serif">
+                    <span class="material-icons" style="font-size:1.1rem">lock_open</span>
+                    Corrigir Documento
+                </h3>
+                <button onclick="fecharModalCorretor()"
+                    style="background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:1.3rem;line-height:1">✕</button>
+            </div>
+            <div style="padding:24px">
+                <p style="font-size:.82rem;color:#555;margin-bottom:6px;line-height:1.55">
+                    Apenas <strong id="corr-nome-hint">o signatário</strong> pode retirar a assinatura.<br>
+                    Confirme seu CPF e senha para <strong style="color:#dc3545">desbloquear e editar</strong> o
+                    documento.
+                </p>
+                <div
+                    style="background:#fff5f5;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:.78rem;color:#991b1b">
+                    <span class="material-icons"
+                        style="font-size:.85rem;vertical-align:middle;margin-right:4px">warning</span>
+                    A assinatura eletrônica será <strong>removida</strong>. Será necessário assinar novamente após as
+                    correções.
+                </div>
+                <div style="margin-bottom:14px">
+                    <label
+                        style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#1a2744;display:block;margin-bottom:5px">CPF</label>
+                    <input type="text" id="corr-cpf" placeholder="000.000.000-00" maxlength="14"
+                        style="width:100%;padding:10px 13px;border:1.5px solid #ddd;border-radius:9px;font-size:.9rem;outline:none;font-family:inherit"
+                        oninput="mascararCPF(this)"
+                        onkeydown="if(event.key==='Enter') document.getElementById('corr-senha').focus()">
+                </div>
+                <div style="margin-bottom:6px">
+                    <label
+                        style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#1a2744;display:block;margin-bottom:5px">Senha</label>
+                    <div style="position:relative">
+                        <input type="password" id="corr-senha" placeholder="••••••••"
+                            style="width:100%;padding:10px 36px 10px 13px;border:1.5px solid #ddd;border-radius:9px;font-size:.9rem;outline:none;font-family:inherit"
+                            onkeydown="if(event.key==='Enter') confirmarCorrecao()">
+                        <button onclick="toggleSenhaVis('corr-senha',this)"
+                            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#999">
+                            <span class="material-icons" style="font-size:1rem">visibility</span>
+                        </button>
+                    </div>
+                </div>
+                <p id="corr-msg" style="font-size:.8rem;min-height:18px;padding:6px 0;color:#dc3545"></p>
+            </div>
+            <div style="padding:0 24px 24px;display:flex;gap:10px">
+                <button onclick="fecharModalCorretor()"
+                    style="padding:10px 18px;background:#eee;border:none;border-radius:9px;cursor:pointer;font-size:.88rem">Cancelar</button>
+                <button onclick="confirmarCorrecao()" id="btn-confirmar-corr"
+                    style="flex:1;padding:10px;background:#dc3545;color:white;border:none;border-radius:9px;cursor:pointer;font-size:.9rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;font-family:'Barlow Condensed',sans-serif">
+                    <span class="material-icons" style="font-size:1rem">lock_open</span>
+                    Desbloquear e Editar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes mIn {
+            from {
+                opacity: 0;
+                transform: translateY(18px) scale(.97);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+    </style>
+
+</body>
+
+</html>

@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuários — Sistema de Frota / 10º BPM</title>
+    <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+
+        :root{
+            --cor-primaria:#1a2744;
+            --cor-secundaria:#2e3f6e;
+            --cor-destaque:#c8a415;
+            --cor-fundo:#f0f2f5;
+            --cor-texto:#1a2744;
+            --cor-success:#28a745;
+            --cor-warning:#e09c00;
+            --cor-danger:#dc3545;
+            --sombra:0 4px 14px rgba(0,0,0,.12);
+            --radius:12px;
+        }
+        body {
+            text-decoration: none;
+        }
+
+        body{font-family:'Segoe UI',Arial,sans-serif;background:var(--cor-fundo);color:var(--cor-texto);min-height:100vh;display:flex;flex-direction:column}
+
+        /* ── HEADER ── */
+        header{background:var(--cor-primaria);color:white;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;box-shadow:0 2px 12px rgba(0,0,0,.3);position:sticky;top:0;z-index:100}
+        .header-info-left{display:flex;align-items:center;gap:14px}
+        .brasao{width:58px;height:auto}
+        .cabecalhotexto h1{font-size:.98rem;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+        .cabecalhotexto h3{font-size:.72rem;font-weight:400;color:var(--cor-destaque);letter-spacing:1px}
+        .header-info-right{display:flex;align-items:center;gap:18px}
+        .relogio{font-size:.75rem;text-align:right;line-height:1.6;color:#cdd9f5}
+        .exibirusuario p{font-size:.72rem;text-align:right;line-height:1.4}
+        .exibirusuario .user-nome{font-weight:700;color:var(--cor-destaque);font-size:.85rem}
+
+        /* ── LAYOUT ── */
+        .pagecomplete{display:flex;flex:1}
+        .navegacao{width:110px;background:var(--cor-primaria);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:2px;position:sticky;top:78px;height:calc(100vh - 78px);overflow-y:auto}
+        .navegacao a,.navegacao button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:11px 6px;width:100%;color:#cdd9f5;text-decoration:none;font-size:.62rem;text-align:center;border:none;background:transparent;cursor:pointer;transition:background .18s,color .18s}
+        .navegacao a:hover,.navegacao button:hover,.navegacao a.active{background:var(--cor-destaque);color:var(--cor-primaria)}
+        .navegacao a img,.navegacao button img{filter:invert(1) brightness(1.4)}
+        .navegacao a:hover img,.navegacao button:hover img,.navegacao a.active img{filter:invert(0) brightness(.2)}
+        .navegacao p{line-height:1.25}
+        .nav-separator{width:60%;border:none;border-top:1px solid rgba(255,255,255,.15);margin:6px 0}
+
+        /* ── MAIN ── */
+        main{flex:1;padding:26px;overflow-y:auto}
+        .saudacao{margin-bottom:22px}
+        .saudacao h2{font-size:1.18rem;font-weight:700;color:var(--cor-primaria)}
+        .saudacao p{font-size:.86rem;color:#666;margin-top:4px}
+
+        /* ── HEADER DA SEÇÃO ── */
+        .header-usuarios{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+        .header-usuarios h2{font-size:1.1rem;font-weight:700;color:var(--cor-primaria);display:flex;align-items:center;gap:8px}
+        .btn-novo{display:flex;align-items:center;gap:6px;padding:10px 20px;background:var(--cor-primaria);color:white;border:none;border-radius:9px;font-size:.88rem;font-weight:700;cursor:pointer;transition:background .2s;letter-spacing:.4px}
+        .btn-novo:hover{background:var(--cor-destaque);color:var(--cor-primaria)}
+
+        /* ── STATS BAR ── */
+        .stats-bar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+        .stat-chip{display:flex;align-items:center;gap:7px;padding:8px 16px;border-radius:30px;font-size:.8rem;font-weight:700;background:white;box-shadow:var(--sombra);cursor:pointer;transition:transform .15s,box-shadow .15s;user-select:none}
+        .stat-chip:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.15)}
+        .chip-total{color:var(--cor-primaria);border-left:4px solid var(--cor-primaria)}
+        .chip-admin{color:#d9534f;border-left:4px solid #d9534f}
+        .chip-usuario{color:var(--cor-secundaria);border-left:4px solid var(--cor-secundaria)}
+        .chip-pend{color:var(--cor-warning);border-left:4px solid var(--cor-warning)}
+        .stat-chip .material-icons{font-size:1rem}
+
+        /* ── FILTROS ── */
+        .barra-filtros{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+        .filtro-input,.filtro-select{padding:9px 14px;border:1.5px solid #ddd;border-radius:9px;font-size:.85rem;outline:none;background:white;color:var(--cor-primaria);transition:border-color .2s}
+        .filtro-input{width:240px}
+        .filtro-input:focus,.filtro-select:focus{border-color:var(--cor-destaque)}
+
+        /* ── GRID DE CARDS ── */
+        .grid-usuarios{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+
+        /* ── CARD ── */
+        .card-usuario{background:white;border-radius:var(--radius);box-shadow:var(--sombra);overflow:hidden;transition:transform .15s,box-shadow .15s;border-top:4px solid var(--cor-secundaria)}
+        .card-usuario:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.15)}
+        .card-usuario.pendente{border-top-color:var(--cor-warning)}
+        .card-usuario.perfil-ADMIN{border-top-color:#d9534f}
+
+        .card-top{display:flex;align-items:center;gap:12px;padding:16px 16px 10px}
+        .card-avatar{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:white;flex-shrink:0;letter-spacing:1px}
+        .avatar-ADMIN{background:#d9534f}
+        .avatar-USUARIO{background:var(--cor-secundaria)}
+        .avatar-PEND{background:#aaa}
+
+        .card-info{flex:1;min-width:0}
+        .card-info .nome{font-weight:700;font-size:.9rem;color:var(--cor-primaria);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+        .card-info .nome-completo{font-size:.78rem;color:var(--cor-secundaria);margin-top:1px;font-style:italic}
+        .card-info .sub{font-size:.76rem;color:#888;margin-top:2px}
+        .tag-pendente{background:#fff3cd;color:#856404;font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap}
+
+        .badge-perfil{font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+        .badge-ADMIN{background:#f8d7da;color:#721c24}
+        .badge-USUARIO{background:#d1ecf1;color:#0c5460}
+        .badge-PEND{background:#fff3cd;color:#856404}
+
+        .card-detalhes{padding:0 16px 12px;display:flex;flex-direction:column;gap:5px;border-bottom:1px solid #f0f0f0}
+        .card-detalhes span{font-size:.76rem;color:#666;display:flex;align-items:center;gap:6px}
+        .card-detalhes .material-icons{font-size:.9rem;color:var(--cor-destaque)}
+
+        .card-acoes{padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap}
+        .btn-card{padding:6px 13px;border:none;border-radius:7px;font-size:.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;transition:opacity .15s,transform .1s}
+        .btn-card:hover{opacity:.85}
+        .btn-card:active{transform:scale(.97)}
+        .btn-editar-card{background:var(--cor-secundaria);color:white}
+        .btn-aprovar-card{background:var(--cor-success);color:white}
+        .btn-revogar-card{background:var(--cor-danger);color:white}
+        .btn-excluir-card{background:#6c757d;color:white}
+
+        /* ── ESTADO VAZIO ── */
+        .estado-vazio{grid-column:1/-1;text-align:center;padding:60px 20px;color:#aaa}
+        .estado-vazio .material-icons{font-size:3rem;display:block;margin-bottom:12px;color:#ddd}
+
+        /* ── LOADER ── */
+        .loader-usuarios{text-align:center;padding:60px;color:#aaa;font-size:.95rem;grid-column:1/-1}
+
+        /* ── MODAL ── */
+        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;align-items:center;justify-content:center}
+        .modal-overlay.open{display:flex}
+        .modal-box{background:white;border-radius:var(--radius);width:100%;max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.4);animation:modalIn .25s ease}
+        @keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+        .modal-header{background:var(--cor-primaria);color:white;padding:16px 22px;border-radius:var(--radius) var(--radius) 0 0;display:flex;justify-content:space-between;align-items:center}
+        .modal-header h3{font-size:.98rem;font-weight:700;display:flex;align-items:center;gap:8px}
+        .modal-header h3 .material-icons{font-size:1.1rem}
+        .modal-close{cursor:pointer;font-size:1.3rem;background:none;border:none;color:white;line-height:1;opacity:.7;transition:opacity .15s}
+        .modal-close:hover{opacity:1}
+        .modal-body{padding:22px 24px}
+
+        /* ── MODAL: APROVAÇÃO RÁPIDA ── */
+        .modal-aprovacao .modal-body{padding:24px}
+        .aprovacao-info{background:#f8f9fa;border-radius:8px;padding:14px;margin-bottom:18px;display:flex;align-items:center;gap:12px}
+        .aprovacao-avatar{width:48px;height:48px;border-radius:50%;background:#aaa;color:white;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;flex-shrink:0}
+        .aprovacao-nome{font-weight:700;font-size:.95rem;color:var(--cor-primaria)}
+        .aprovacao-sub{font-size:.78rem;color:#888;margin-top:2px}
+
+        .perfil-opcoes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+        .perfil-opcao{border:2px solid #ddd;border-radius:9px;padding:12px 10px;cursor:pointer;text-align:center;transition:border-color .2s,background .2s;user-select:none}
+        .perfil-opcao:hover{border-color:var(--cor-destaque);background:#fffbea}
+        .perfil-opcao.selecionado{border-color:var(--cor-primaria);background:#eef2ff}
+        .perfil-opcao .perfil-icon{font-size:1.5rem;margin-bottom:4px}
+        .perfil-opcao .perfil-nome{font-weight:700;font-size:.85rem;color:var(--cor-primaria)}
+        .perfil-opcao .perfil-desc{font-size:.7rem;color:#888;margin-top:2px;line-height:1.3}
+
+        /* ── FORM DO MODAL ── */
+        .form-group{margin-bottom:15px}
+        .form-group label{display:block;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--cor-primaria);margin-bottom:5px}
+        .form-group input,.form-group select{width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:9px;font-size:.9rem;outline:none;transition:border-color .2s,box-shadow .2s;color:var(--cor-texto);background:white}
+        .form-group input:focus,.form-group select:focus{border-color:var(--cor-destaque);box-shadow:0 0 0 3px rgba(200,164,21,.1)}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .campo-obrigatorio::after{content:' *';color:var(--cor-danger)}
+
+        .modal-footer{padding:0 24px 24px;display:flex;gap:10px}
+        .btn-salvar{flex:1;padding:12px;background:var(--cor-primaria);color:white;border:none;border-radius:9px;font-size:.92rem;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;transition:background .2s}
+        .btn-salvar:hover{background:var(--cor-destaque);color:var(--cor-primaria)}
+        .btn-salvar.success{background:var(--cor-success)}
+        .btn-cancelar{padding:12px 22px;background:#eee;color:#555;border:none;border-radius:9px;font-size:.9rem;cursor:pointer;transition:background .2s}
+        .btn-cancelar:hover{background:#ddd}
+        .msg-feedback{text-align:center;font-size:.82rem;padding:0 24px 10px;min-height:18px}
+
+        /* ── FOOTER ── */
+        footer{background:var(--cor-primaria);color:#cdd9f5;text-align:center;padding:10px;font-size:.73rem}
+
+        /* ── RESPONSIVO ── */
+        @media(max-width:700px){.navegacao{width:68px}.navegacao p{display:none}.relogio{display:none}main{padding:14px}.header-usuarios{flex-direction:column;align-items:flex-start}.barra-filtros{flex-direction:column;align-items:flex-start}.filtro-input{width:100%}.form-row{grid-template-columns:1fr}.perfil-opcoes{grid-template-columns:1fr 1fr}}
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="header-info-left">
+            <img class="brasao" src="/img/brasao.png" alt="Brasão 10º BPM">
+            <div class="cabecalhotexto">
+                <h1>Sistema de Controle de Frota</h1>
+                <h3>10º Batalhão de Polícia Militar</h3>
+            </div>
+        </div>
+        <div class="header-info-right">
+            <div class="relogio" id="relogio"></div>
+            <div class="exibirusuario" id="user-info"></div>
+        </div>
+    </header>
+
+    <section class="pagecomplete">
+
+        <!-- NAV LATERAL -->
+         <nav class="navegacao">
+        <a href="../index.html">
+            <img width="40" height="40" src="https://img.icons8.com/fluency-systems-regular/48/home--v1.png" alt="home">
+            <p>Home</p>
+        </a>
+        <a href="/page/cadastro-viaturas.html">
+            <img width="40" height="40" src="https://img.icons8.com/external-kiranshastry-solid-kiranshastry/64/external-police-car-law-and-crime-kiranshastry-solid-kiranshastry.png" alt="viaturas">
+            <p>Viaturas</p>
+        </a>
+        <a href="/page/cadastro-motoristas.html">
+            <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/user--v1.png" alt="motoristas">
+            <p>Motoristas</p>
+        </a>
+        <a href="/page/manutencao.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/maintenance.png" alt="manutencao">
+            <p>Manutenção</p>
+        </a>
+        <a href="/page/mapa_diario.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/map--v1.png" alt="mapa">
+            <p>Mapa Diário</p>
+        </a>
+        <a href="/page/check_vistorias.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios-filled/50/inspection.png" alt="vistorias">
+            <p>Vistorias</p>
+        </a>
+        <a href="/page/sinistros.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/car-accident.png" alt="sinistros">
+            <p>Sinistros</p>
+        </a>
+        <a href="/page/usuarios.html" class="active">
+            <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/manage-accounts.png" alt="usuarios">
+            <p>Usuários</p>
+        <hr class="nav-separator">
+        <button onclick="logout()">
+            <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/exit.png" alt="Sair">
+            <p>Sair</p>
+        </button>
+    </nav>
+
+        <!-- MAIN -->
+        <main>
+            <div class="saudacao">
+                <h2>🛡️ Gerenciamento de Usuários</h2>
+                <p>Aprove, edite e controle o acesso ao sistema de frota.</p>
+            </div>
+
+            <div class="header-usuarios">
+                <h2>
+                    <span class="material-icons" style="color:var(--cor-destaque)">manage_accounts</span>
+                    Usuários Cadastrados
+                </h2>
+                <button class="btn-novo" onclick="abrirModalNovo()">
+                    <span class="material-icons" style="font-size:1.1rem">person_add</span>
+                    Novo Usuário
+                </button>
+            </div>
+
+            <!-- STATS -->
+            <div class="stats-bar" id="stats-bar">
+                <div class="stat-chip chip-total" onclick="filtrarPorChip('')">
+                    <span class="material-icons">groups</span>
+                    <span id="stat-total">--</span> Total
+                </div>
+                <div class="stat-chip chip-admin" onclick="filtrarPorChip('ADMIN')">
+                    <span class="material-icons">admin_panel_settings</span>
+                    <span id="stat-admin">--</span> ADMIN
+                </div>
+                <div class="stat-chip chip-usuario" onclick="filtrarPorChip('USUARIO')">
+                    <span class="material-icons">badge</span>
+                    <span id="stat-usuario">--</span> Usuário
+                </div>
+                <div class="stat-chip chip-pend" onclick="filtrarPorChip('PENDENTE')">
+                    <span class="material-icons">pending</span>
+                    <span id="stat-pend">--</span> Pendentes
+                </div>
+            </div>
+
+            <!-- FILTROS -->
+            <div class="barra-filtros">
+                <input class="filtro-input" type="text" id="filtro-nome"
+                    placeholder="🔍 Buscar por nome ou usuário..." oninput="renderizarCards()">
+                <select class="filtro-select" id="filtro-perfil" onchange="renderizarCards()">
+                    <option value="">Todos os perfis</option>
+                    <option value="ADMIN">ADMIN</option>
+                    <option value="USUARIO">USUARIO</option>
+                    <option value="PENDENTE">Pendentes</option>
+                </select>
+            </div>
+
+            <!-- GRID DE CARDS -->
+            <div id="grid-usuarios" class="grid-usuarios">
+                <div class="loader-usuarios">
+                    <span class="material-icons" style="font-size:2.5rem;display:block;margin-bottom:10px;color:#ccc">hourglass_empty</span>
+                    Carregando usuários...
+                </div>
+            </div>
+        </main>
+    </section>
+
+    <footer>
+        <h4>Seção de Operações — P3 / 10º Batalhão de Polícia Militar</h4>
+    </footer>
+
+
+    <!-- ══════════════════════════════════════════════
+         MODAL — EDITAR / NOVO USUÁRIO
+    ══════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="modal-usuario">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="modal-titulo">
+                    <span class="material-icons">person_add</span>
+                    Novo Usuário
+                </h3>
+                <button class="modal-close" onclick="fecharModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="u-id">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="campo-obrigatorio">Nome de Guerra</label>
+                        <input type="text" id="u-usuario" placeholder="Ex: SILVA">
+                    </div>
+                    <div class="form-group">
+                        <label class="campo-obrigatorio">Matrícula</label>
+                        <input type="text" id="u-matricula" placeholder="Ex: 123456">
+                    </div>
+                    <div class="form-group">
+                        <label class="campo-obrigatorio">CPF</label>
+                        <input type="text" id="u-cpf" placeholder="Ex: 123.456.789-00">
+                    </div>
+                </div>
+
+                <!-- Nome Completo (linha inteira) -->
+                <div class="form-group">
+                    <label class="campo-obrigatorio">Nome Completo</label>
+                    <input type="text" id="u-nome-completo" placeholder="Ex: João da Silva Santos">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Posto / Graduação</label>
+                        <select id="u-posto">
+                            <option value="">Selecione...</option>
+                            <optgroup label="Oficiais">
+                                <option value="CEL">CEL — Coronel</option>
+                                <option value="TC">TC — Ten. Coronel</option>
+                                <option value="MAJ">MAJ — Major</option>
+                                <option value="CAP">CAP — Capitão</option>
+                                <option value="1TEN">1º TEN</option>
+                                <option value="2TEN">2º TEN</option>
+                            </optgroup>
+                            <optgroup label="Praças">
+                                <option value="SUB">SUB TEN</option>
+                                <option value="1SGT">1º SGT</option>
+                                <option value="2SGT">2º SGT</option>
+                                <option value="3SGT">3º SGT</option>
+                                <option value="CB">CB — Cabo</option>
+                                <option value="SD">SD — Soldado</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="campo-obrigatorio">Perfil de Acesso</label>
+                        <select id="u-perfil">
+                            <option value="PENDENTE">PENDENTE (sem acesso)</option>
+                            <option value="USUARIO">USUARIO — Acesso padrão</option>
+                            <option value="ADMIN">ADMIN — Acesso total</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Seção / Subunidade</label>
+                    <input type="text" id="u-secao" placeholder="Ex: P3, CIPOC, 1ª Cia">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label id="label-senha" class="campo-obrigatorio">Senha</label>
+                        <input type="password" id="u-senha" placeholder="Mínimo 6 caracteres">
+                    </div>
+                    <div class="form-group">
+                        <label id="label-senha2">Confirmar Senha</label>
+                        <input type="password" id="u-senha2" placeholder="Repita a senha">
+                    </div>
+                </div>
+            </div>
+            <p class="msg-feedback" id="u-msg"></p>
+            <div class="modal-footer">
+                <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+                <button class="btn-salvar" id="btn-salvar-usuario" onclick="salvarUsuario()">
+                    Salvar Usuário
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════
+         MODAL — APROVAÇÃO RÁPIDA
+    ══════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="modal-aprovacao">
+        <div class="modal-box modal-aprovacao">
+            <div class="modal-header">
+                <h3>
+                    <span class="material-icons">how_to_reg</span>
+                    Aprovar Acesso
+                </h3>
+                <button class="modal-close" onclick="fecharModalAprovacao()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="aprovacao-info">
+                    <div class="aprovacao-avatar" id="apr-avatar">--</div>
+                    <div>
+                        <div class="aprovacao-nome" id="apr-nome">--</div>
+                        <div class="aprovacao-sub" id="apr-sub">--</div>
+                    </div>
+                </div>
+
+                <p style="font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--cor-primaria);margin-bottom:12px">
+                    Selecione o perfil de acesso:
+                </p>
+
+                <div class="perfil-opcoes">
+                    <div class="perfil-opcao" id="opc-usuario" onclick="selecionarPerfil('USUARIO')">
+                        <div class="perfil-icon">👤</div>
+                        <div class="perfil-nome">USUARIO</div>
+                        <div class="perfil-desc">Acesso padrão ao sistema de frota</div>
+                    </div>
+                    <div class="perfil-opcao" id="opc-admin" onclick="selecionarPerfil('ADMIN')">
+                        <div class="perfil-icon">🛡️</div>
+                        <div class="perfil-nome">ADMIN</div>
+                        <div class="perfil-desc">Acesso total, incluindo usuários</div>
+                    </div>
+                </div>
+
+                <p class="msg-feedback" id="apr-msg" style="padding:0;margin-bottom:0"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancelar" onclick="fecharModalAprovacao()">Cancelar</button>
+                <button class="btn-salvar success" id="btn-confirmar-aprovacao" onclick="confirmarAprovacao()">
+                    <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">check_circle</span>
+                    Confirmar Aprovação
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+    // ================================================================
+    // FIREBASE REST
+    // ================================================================
+    const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
+
+    async function fb_get(no) {
+        const r = await fetch(`${FB_URL}/${no}.json`);
+        return r.json();
+    }
+    async function fb_post(no, dados) {
+        const r = await fetch(`${FB_URL}/${no}.json`, {
+            method: 'POST', body: JSON.stringify(dados),
+            headers: { 'Content-Type': 'application/json' }
+        });
+        return r.json();
+    }
+    async function fb_put(no, id, dados) {
+        const r = await fetch(`${FB_URL}/${no}/${id}.json`, {
+            method: 'PUT', body: JSON.stringify(dados),
+            headers: { 'Content-Type': 'application/json' }
+        });
+        return r.json();
+    }
+    async function fb_patch(no, id, dados) {
+        const r = await fetch(`${FB_URL}/${no}/${id}.json`, {
+            method: 'PATCH', body: JSON.stringify(dados),
+            headers: { 'Content-Type': 'application/json' }
+        });
+        return r.json();
+    }
+    async function fb_delete(no, id) {
+        return fetch(`${FB_URL}/${no}/${id}.json`, { method: 'DELETE' });
+    }
+
+    // ================================================================
+    // AUTH
+    // ================================================================
+    function checkLogin() {
+        const usuario = localStorage.getItem('frota_usuario');
+        const perfil  = localStorage.getItem('frota_perfil');
+        if (!usuario) { window.location.href = 'login.html'; return false; }
+        if (perfil !== 'ADMIN') {
+            document.querySelector('main').innerHTML = `
+                <div style="text-align:center;padding:80px 20px;color:#888">
+                    <span class="material-icons" style="font-size:3rem;display:block;margin-bottom:12px;color:#dc3545">lock</span>
+                    <h3 style="color:#dc3545">ACESSO RESTRITO</h3>
+                    <p style="margin-top:8px">Somente administradores podem gerenciar usuários.</p>
+                </div>`;
+            return false;
+        }
+        document.getElementById('user-info').innerHTML =
+            `<p>Usuário:</p><p class="user-nome">${usuario}</p>`;
+        return true;
+    }
+
+    function logout() {
+        if (confirm('Deseja encerrar a sessão?')) {
+            localStorage.removeItem('frota_usuario');
+            localStorage.removeItem('frota_perfil');
+            window.location.href = 'login.html';
+        }
+    }
+
+    // ================================================================
+    // RELÓGIO
+    // ================================================================
+    function atualizarRelogio() {
+        const a = new Date();
+        document.getElementById('relogio').innerHTML =
+            `${a.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'long', year: 'numeric' })} <br> ${a.toLocaleTimeString('pt-BR')}`;
+    }
+
+    // ================================================================
+    // ESTADO
+    // ================================================================
+    let _usuariosCache = {};   // { firebaseKey: { usuario, perfil, ... } }
+    let _editandoKey   = null;
+    let _aprovandoKey  = null;
+    let _perfilSelecionado = null;
+
+    // ================================================================
+    // CARREGAR USUÁRIOS
+    // ================================================================
+    async function carregarUsuarios() {
+        try {
+            const dados = await fb_get('usuarios');
+            _usuariosCache = dados || {};
+            atualizarStats();
+            renderizarCards();
+        } catch (e) {
+            document.getElementById('grid-usuarios').innerHTML =
+                `<div class="loader-usuarios" style="color:#dc3545">
+                    <span class="material-icons" style="font-size:2.5rem;display:block;margin-bottom:10px">error_outline</span>
+                    Erro ao carregar. Verifique a conexão.
+                </div>`;
+        }
+    }
+
+    // ================================================================
+    // STATS
+    // ================================================================
+    function atualizarStats() {
+        const lista = Object.values(_usuariosCache);
+        document.getElementById('stat-total').textContent   = lista.length;
+        document.getElementById('stat-admin').textContent   = lista.filter(u => u.perfil === 'ADMIN').length;
+        document.getElementById('stat-usuario').textContent = lista.filter(u => u.perfil === 'USUARIO').length;
+        document.getElementById('stat-pend').textContent    = lista.filter(u => !u.perfil || u.perfil === 'PENDENTE').length;
+    }
+
+    // ================================================================
+    // FILTRO POR CHIP
+    // ================================================================
+    function filtrarPorChip(perfil) {
+        document.getElementById('filtro-perfil').value = perfil;
+        renderizarCards();
+    }
+
+    // ================================================================
+    // RENDERIZAR CARDS
+    // ================================================================
+    function renderizarCards() {
+        const txtFiltro    = (document.getElementById('filtro-nome').value || '').toLowerCase();
+        const filtroPerfil = document.getElementById('filtro-perfil').value;
+        const grid         = document.getElementById('grid-usuarios');
+
+        let lista = Object.entries(_usuariosCache).filter(([, u]) => {
+            const nome   = (u.usuario || '').toLowerCase();
+            const mat    = (u.matricula || '').toLowerCase();
+            const secao  = (u.secao || '').toLowerCase();
+            const cpf    = (u.cpf || '').toLowerCase();
+            const perfil = u.perfil || 'PENDENTE';
+            const okTexto  = !txtFiltro || nome.includes(txtFiltro) || mat.includes(txtFiltro) || secao.includes(txtFiltro) || cpf.includes(txtFiltro);
+            const okPerfil = !filtroPerfil || perfil === filtroPerfil;
+            return okTexto && okPerfil;
+        });
+
+        // Pendentes primeiro, depois por nome
+        lista.sort(([, a], [, b]) => {
+            const pa = a.perfil || 'PENDENTE', pb = b.perfil || 'PENDENTE';
+            if (pa === 'PENDENTE' && pb !== 'PENDENTE') return -1;
+            if (pb === 'PENDENTE' && pa !== 'PENDENTE') return 1;
+            return (a.usuario || '').localeCompare(b.usuario || '');
+        });
+
+        if (lista.length === 0) {
+            grid.innerHTML = `<div class="estado-vazio">
+                <span class="material-icons">person_off</span>
+                Nenhum usuário encontrado.
+            </div>`;
+            return;
+        }
+
+        grid.innerHTML = lista.map(([id, u]) => criarCardHTML(id, u)).join('');
+    }
+
+    // ================================================================
+    // HTML DE UM CARD
+    // ================================================================
+    function criarCardHTML(id, u) {
+        const perfil   = u.perfil || 'PENDENTE';
+        const isPend   = perfil === 'PENDENTE';
+        const nome     = u.usuario || 'Sem nome';
+        const initials = nome.slice(0, 2).toUpperCase();
+        const avatarCls = isPend ? 'avatar-PEND' : (perfil === 'ADMIN' ? 'avatar-ADMIN' : 'avatar-USUARIO');
+        const badgeCls  = isPend ? 'badge-PEND'  : (perfil === 'ADMIN' ? 'badge-ADMIN'  : 'badge-USUARIO');
+
+        const botoesHTML = `
+            <button class="btn-card btn-editar-card" onclick="event.stopPropagation();abrirModalEditar('${id}')">
+                <span class="material-icons" style="font-size:.9rem">edit</span> Editar
+            </button>
+            ${isPend ? `
+            <button class="btn-card btn-aprovar-card" onclick="event.stopPropagation();abrirModalAprovacao('${id}')">
+                <span class="material-icons" style="font-size:.9rem">how_to_reg</span> Aprovar
+            </button>` : `
+            <button class="btn-card btn-revogar-card" onclick="event.stopPropagation();revogarAcesso('${id}')">
+                <span class="material-icons" style="font-size:.9rem">block</span> Revogar
+            </button>`}
+            <button class="btn-card btn-excluir-card" onclick="event.stopPropagation();excluirUsuario('${id}')">
+                <span class="material-icons" style="font-size:.9rem">delete</span>
+            </button>`;
+
+        return `
+        <div class="card-usuario perfil-${perfil} ${isPend ? 'pendente' : ''}">
+            <div class="card-top">
+                <div class="card-avatar ${avatarCls}">${initials}</div>
+                <div class="card-info">
+                    <div class="nome">
+                        ${u.posto ? u.posto + ' ' : ''}${nome}
+                        ${isPend ? '<span class="tag-pendente">PENDENTE</span>' : ''}
+                    </div>
+                    ${u.nomeCompleto ? `<div class="nome-completo">${u.nomeCompleto}</div>` : ''}
+                    <div class="sub">${u.secao || '—'} ${u.matricula ? '· Mat: ' + u.matricula : ''} ${u.cpf ? '· CPF: ' + u.cpf : ''}</div>
+                </div>
+                <span class="badge-perfil ${badgeCls}">${perfil}</span>
+            </div>
+            <div class="card-detalhes">
+                <span>
+                    <span class="material-icons">military_tech</span>
+                    ${u.posto || '—'}
+                </span>
+                <span>
+                    <span class="material-icons">calendar_today</span>
+                    Cadastro: ${u.criadoEm ? new Date(u.criadoEm).toLocaleDateString('pt-BR') : '—'}
+                </span>
+                <span>
+                    <span class="material-icons">manage_accounts</span>
+                    Criado por: ${u.criadoPor || '—'}
+                </span>
+            </div>
+            <div class="card-acoes">${botoesHTML}</div>
+        </div>`;
+    }
+
+    // ================================================================
+    // MODAL — NOVO USUÁRIO
+    // ================================================================
+    function abrirModalNovo() {
+        _editandoKey = null;
+        document.getElementById('modal-titulo').innerHTML =
+            '<span class="material-icons">person_add</span> Novo Usuário';
+        ['u-usuario','u-nome-completo','u-matricula','u-secao','u-senha','u-senha2'].forEach(id =>
+            document.getElementById(id).value = '');
+        document.getElementById('u-posto').value   = '';
+        document.getElementById('u-perfil').value  = 'PENDENTE';
+        document.getElementById('u-id').value      = '';
+        document.getElementById('u-msg').textContent = '';
+        document.getElementById('label-senha').className = 'campo-obrigatorio';
+        document.getElementById('label-senha2').className = 'campo-obrigatorio';
+        document.getElementById('modal-usuario').classList.add('open');
+    }
+
+    // ================================================================
+    // MODAL — EDITAR USUÁRIO
+    // ================================================================
+    function abrirModalEditar(id) {
+        const u = _usuariosCache[id];
+        if (!u) return;
+        _editandoKey = id;
+        document.getElementById('modal-titulo').innerHTML =
+            '<span class="material-icons">manage_accounts</span> Editar Usuário';
+        document.getElementById('u-id').value       = id;
+        document.getElementById('u-usuario').value  = u.usuario || '';
+        document.getElementById('u-nome-completo').value = u.nomeCompleto || '';
+        document.getElementById('u-matricula').value= u.matricula || '';
+        document.getElementById('u-cpf').value      = u.cpf || '';
+        document.getElementById('u-posto').value    = u.posto || '';
+        document.getElementById('u-secao').value    = u.secao || '';
+        document.getElementById('u-perfil').value   = u.perfil || 'PENDENTE';
+        document.getElementById('u-senha').value    = '';
+        document.getElementById('u-senha2').value   = '';
+        document.getElementById('u-msg').textContent = '';
+        // Senha opcional na edição
+        document.getElementById('label-senha').className = '';
+        document.getElementById('label-senha2').className = '';
+        document.getElementById('modal-usuario').classList.add('open');
+    }
+
+    function fecharModal() {
+        document.getElementById('modal-usuario').classList.remove('open');
+    }
+
+    // ================================================================
+    // SALVAR USUÁRIO
+    // ================================================================
+    async function salvarUsuario() {
+        const usuario   = document.getElementById('u-usuario').value.trim().toUpperCase();
+        const nomeCompleto = document.getElementById('u-nome-completo').value.trim();
+        const matricula = document.getElementById('u-matricula').value.trim();
+        const cpf       = document.getElementById('u-cpf').value.trim();
+        const posto     = document.getElementById('u-posto').value;
+        const secao     = document.getElementById('u-secao').value.trim().toUpperCase();
+        const perfil    = document.getElementById('u-perfil').value;
+        const senha     = document.getElementById('u-senha').value.trim();
+        const senha2    = document.getElementById('u-senha2').value.trim();
+        const msgEl     = document.getElementById('u-msg');
+        msgEl.style.color = '#dc3545';
+        msgEl.textContent = '';
+
+        if (!usuario || !nomeCompleto || !matricula || !cpf) {
+            msgEl.textContent = '⚠️ Preencha Nome de Guerra, Nome Completo, Matrícula e CPF.'; return;
+        }
+        if (!_editandoKey && !senha) {
+            msgEl.textContent = '⚠️ Defina uma senha para o novo usuário.'; return;
+        }
+        if (senha && senha.length < 6) {
+            msgEl.textContent = '⚠️ A senha deve ter no mínimo 6 caracteres.'; return;
+        }
+        if (senha && senha !== senha2) {
+            msgEl.textContent = '⚠️ As senhas não conferem.'; return;
+        }
+
+        // Verifica duplicidade ao criar
+        if (!_editandoKey) {
+            const lista = Object.values(_usuariosCache);
+            if (lista.some(u => u.usuario && u.usuario.toUpperCase() === usuario)) {
+                msgEl.textContent = '⚠️ Este nome de guerra já está cadastrado.'; return;
+            }
+            if (lista.some(u => u.matricula && u.matricula === matricula)) {
+                msgEl.textContent = '⚠️ Esta matrícula já está cadastrada.'; return;
+            }
+            if (lista.some(u => u.cpf && u.cpf === cpf)) {
+                msgEl.textContent = '⚠️ Este CPF já está cadastrado.'; return;
+            }
+        }
+
+        msgEl.style.color = '#155724';
+        msgEl.textContent = 'Salvando...';
+
+        try {
+            if (_editandoKey) {
+                const dados = { usuario, nomeCompleto, matricula, posto, secao, perfil, cpf,
+                    atualizadoEm: new Date().toISOString(),
+                    atualizadoPor: localStorage.getItem('frota_usuario') || 'Sistema'
+                };
+                if (senha) dados.senha = senha;
+                if (_usuariosCache[_editandoKey]?.criadoEm) dados.criadoEm = _usuariosCache[_editandoKey].criadoEm;
+                if (_usuariosCache[_editandoKey]?.criadoPor) dados.criadoPor = _usuariosCache[_editandoKey].criadoPor;
+                if (_usuariosCache[_editandoKey]?.senha && !senha) dados.senha = _usuariosCache[_editandoKey].senha;
+                await fb_put('usuarios', _editandoKey, dados);
+                _usuariosCache[_editandoKey] = dados;
+                msgEl.textContent = '✅ Usuário atualizado com sucesso!';
+            } else {
+                const dados = {
+                    usuario, nomeCompleto, matricula, posto, secao, perfil, senha, cpf,
+                    aprovado: perfil !== 'PENDENTE',
+                    criadoEm:  new Date().toISOString(),
+                    criadoPor: localStorage.getItem('frota_usuario') || 'Sistema'
+                };
+                const res = await fb_post('usuarios', dados);
+                _usuariosCache[res.name] = dados;
+                msgEl.textContent = '✅ Usuário criado com sucesso!';
+            }
+            atualizarStats();
+            renderizarCards();
+            setTimeout(fecharModal, 1400);
+        } catch (e) {
+            msgEl.style.color = '#dc3545';
+            msgEl.textContent = 'Erro ao salvar. Verifique a conexão.';
+        }
+    }
+
+    // ================================================================
+    // MODAL — APROVAÇÃO
+    // ================================================================
+    function abrirModalAprovacao(id) {
+        const u = _usuariosCache[id];
+        if (!u) return;
+        _aprovandoKey     = id;
+        _perfilSelecionado = null;
+
+        // Limpa seleção anterior
+        document.querySelectorAll('.perfil-opcao').forEach(el => el.classList.remove('selecionado'));
+        document.getElementById('apr-msg').textContent = '';
+
+        // Preenche info do usuário
+        const nome = u.usuario || 'Sem nome';
+        document.getElementById('apr-avatar').textContent = nome.slice(0, 2).toUpperCase();
+        document.getElementById('apr-nome').textContent   = (u.posto ? u.posto + ' ' : '') + nome;
+        document.getElementById('apr-sub').textContent    =
+            (u.secao || '—') + (u.matricula ? ' · Mat: ' + u.matricula : '') +
+            ' · Cadastro: ' + (u.criadoEm ? new Date(u.criadoEm).toLocaleDateString('pt-BR') : '—');
+
+        document.getElementById('modal-aprovacao').classList.add('open');
+    }
+
+    function fecharModalAprovacao() {
+        document.getElementById('modal-aprovacao').classList.remove('open');
+        _aprovandoKey = null;
+        _perfilSelecionado = null;
+    }
+
+    function selecionarPerfil(p) {
+        _perfilSelecionado = p;
+        document.querySelectorAll('.perfil-opcao').forEach(el => el.classList.remove('selecionado'));
+        document.getElementById('opc-' + p.toLowerCase()).classList.add('selecionado');
+        document.getElementById('apr-msg').textContent = '';
+    }
+
+    async function confirmarAprovacao() {
+        const msgEl = document.getElementById('apr-msg');
+        if (!_perfilSelecionado) {
+            msgEl.style.color = '#dc3545';
+            msgEl.textContent = '⚠️ Selecione um perfil antes de confirmar.';
+            return;
+        }
+        msgEl.style.color = '#155724';
+        msgEl.textContent = 'Aprovando...';
+        try {
+            await fb_patch('usuarios', _aprovandoKey, {
+                perfil: _perfilSelecionado,
+                aprovado: true,
+                aprovadoEm: new Date().toISOString(),
+                aprovadoPor: localStorage.getItem('frota_usuario') || 'Sistema'
+            });
+            _usuariosCache[_aprovandoKey].perfil   = _perfilSelecionado;
+            _usuariosCache[_aprovandoKey].aprovado = true;
+            msgEl.textContent = '✅ Acesso aprovado com perfil ' + _perfilSelecionado + '!';
+            atualizarStats();
+            renderizarCards();
+            setTimeout(fecharModalAprovacao, 1400);
+        } catch (e) {
+            msgEl.style.color = '#dc3545';
+            msgEl.textContent = 'Erro ao aprovar. Verifique a conexão.';
+        }
+    }
+
+    // ================================================================
+    // REVOGAR ACESSO
+    // ================================================================
+    async function revogarAcesso(id) {
+        const u = _usuariosCache[id];
+        const nome = u?.usuario || id;
+        if (!confirm(`Revogar o acesso de "${nome}"?\nO perfil será alterado para PENDENTE.`)) return;
+        try {
+            await fb_patch('usuarios', id, {
+                perfil: 'PENDENTE',
+                aprovado: false,
+                revogadoEm: new Date().toISOString(),
+                revogadoPor: localStorage.getItem('frota_usuario') || 'Sistema'
+            });
+            _usuariosCache[id].perfil   = 'PENDENTE';
+            _usuariosCache[id].aprovado = false;
+            atualizarStats();
+            renderizarCards();
+        } catch (e) { alert('Erro ao revogar. Verifique a conexão.'); }
+    }
+
+    // ================================================================
+    // EXCLUIR USUÁRIO
+    // ================================================================
+    async function excluirUsuario(id) {
+        const u = _usuariosCache[id];
+        const nome = u?.usuario || id;
+        if (!confirm(`Excluir permanentemente o usuário "${nome}"?\nEsta ação não pode ser desfeita.`)) return;
+        try {
+            await fb_delete('usuarios', id);
+            delete _usuariosCache[id];
+            atualizarStats();
+            renderizarCards();
+        } catch (e) { alert('Erro ao excluir. Verifique a conexão.'); }
+    }
+
+    // ================================================================
+    // FECHAR MODAIS CLICANDO FORA
+    // ================================================================
+    document.getElementById('modal-usuario').addEventListener('click', function(e) {
+        if (e.target === this) fecharModal();
+    });
+    document.getElementById('modal-aprovacao').addEventListener('click', function(e) {
+        if (e.target === this) fecharModalAprovacao();
+    });
+
+    // Impede que cliques dentro do modal-box propaguem para o overlay
+    document.querySelectorAll('.modal-box, .modal-box.modal-aprovacao').forEach(box => {
+        box.addEventListener('click', function(e) { e.stopPropagation(); });
+    });
+
+    // ================================================================
+    // INICIALIZAÇÃO
+    // ================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!checkLogin()) return;
+        atualizarRelogio();
+        setInterval(atualizarRelogio, 1000);
+        carregarUsuarios();
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Diário — 10º BPM</title>
+    <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/css/stylesindex.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="../css/mapa-diario.css">
+</head>
+
+<body>
+    <header>
+        <div class="header-info-left">
+            <img class="brasao" src="/img/brasao.png" alt="Brasão 10º BPM">
+            <div class="cabecalhotexto">
+                <h1>Sistema de Controle de Frota</h1>
+                <h3>10º Batalhão de Polícia Militar</h3>
+            </div>
+        </div>
+        <div class="header-info-right">
+            <div class="relogio" id="relogio"></div>
+            <div class="exibirusuario" id="user-info"></div>
+        </div>
+    </header>
+    <section class="pagecomplete">
+         <nav class="navegacao">
+        <a href="../index.html">
+            <img width="40" height="40" src="https://img.icons8.com/fluency-systems-regular/48/home--v1.png" alt="home">
+            <p>Home</p>
+        </a>
+        <a href="/page/cadastro-viaturas.html">
+            <img width="40" height="40" src="https://img.icons8.com/external-kiranshastry-solid-kiranshastry/64/external-police-car-law-and-crime-kiranshastry-solid-kiranshastry.png" alt="viaturas">
+            <p>Viaturas</p>
+        </a>
+        <a href="/page/cadastro-motoristas.html">
+            <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/user--v1.png" alt="motoristas">
+            <p>Motoristas</p>
+        </a>
+        <a href="/page/manutencao.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/maintenance.png" alt="manutencao">
+            <p>Manutenção</p>
+        </a>
+        <a href="/page/mapa_diario.html" class="active">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/map--v1.png" alt="mapa">
+            <p>Mapa Diário</p>
+        </a>
+        <a href="/page/check_vistorias.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios-filled/50/inspection.png" alt="vistorias">
+            <p>Vistorias</p>
+        </a>
+        <a href="/page/sinistros.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/car-accident.png" alt="sinistros">
+            <p>Sinistros</p>
+        </a>
+        <hr class="nav-separator">
+        <button onclick="logout()">
+            <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/exit.png" alt="Sair">
+            <p>Sair</p>
+        </button>
+    </nav>
+
+        <main>
+            <div class="form-card" style="margin-top: 20px; border-left: 5px solid var(--cor-destaque);">
+                <label style="margin-bottom: 15px; display: block;"><span class="material-icons"
+                        style="vertical-align: middle;">history</span> Consultar Histórico / Período</label>
+                <div class="grid-form">
+                    <div class="form-group">
+                        <label>Data Inicial</label>
+                        <input type="date" id="filtro-data-inicio">
+                    </div>
+                    <div class="form-group">
+                        <label>Data Final</label>
+                        <input type="date" id="filtro-data-fim">
+                    </div>
+                    <div style="display: flex; gap: 10px; grid-column: span 1;">
+                        <button class="btn-lancar" style="background: var(--cor-secundaria); flex: 1;"
+                            onclick="filtrarMapa()">
+                            <span class="material-icons">search</span> BUSCAR
+                        </button>
+                        <button class="btn-lancar" style="background: #6c757d; flex: 1;" onclick="resetarTela()">
+                            <span class="material-icons">layers_clear</span> RESETAR TELA
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 10px; display: flex; justify-content: flex-end; gap: 10px;">
+                <a href="../relatorios/relatorio_diario.html" class="btn-lancar" style="background: #333; width: auto; padding: 8px 20px; text-decoration: none; font-size: 12px;">
+                    <span class="material-icons">description</span> RELATÓRIO DIÁRIO
+                </a>
+                <button class="btn-lancar" style="background: #333; width: auto; padding: 8px 20px; font-size: 12px;"
+                    onclick="window.print()">
+                    <span class="material-icons">print</span> IMPRIMIR MAPA
+                </button>
+            </div>
+            <div id="msg-feedback"></div>
+
+            <div class="form-card">
+                <div class="grid-form">
+                    <div class="form-group" style="margin-bottom: 0px;">
+                        <h2>Lançar no Mapa</h2>
+                        <label>Guarnição</label>
+                        <select id="m-guarnicao">
+                            <option value="">Selecione...</option>
+                            <option value="RP 01">RP 01</option>
+                            <option value="RP 02">RP 02</option>
+                            <option value="RP MARIBONDO">RP MARIBONDO</option>
+                            <option value="RP IGACI">RP IGACI</option>
+                            <option value="RP CACIMBINHAS">RP CACIMBINHAS</option>
+                            <option value="RP ESTRELA/MINADOR">RP ESTRELA/MINADOR</option>
+                            <option value="RP MAR VERMELHO/PAULO JACINTO">RP MAR VERMELHO/PAULO JACINTO</option>
+                            <option value="RP BELÉM/TANQUE D'ARCA">RP BELÉM/TANQUE D'ARCA</option>
+                            <option value="RP QUEBRANGULO">RP QUEBRANGULO</option>
+                            <option value="TÁTICO URBANO 01">TÁTICO URBANO 01</option>
+                            <option value="TÁTICO URBANO 02">TÁTICO URBANO 02</option>
+                            <option value="TÁTICO RURAL 01">TÁTICO RURAL 01</option>
+                            <option value="TÁTICO RURAL 02">TÁTICO RURAL 02</option>
+                            <option value="FORÇA TAREFA">FT</option>
+                            <option value="SERVIÇO ADMINISTRATIVO">SERVIÇO ADMINISTRATIVO</option>
+                            <option value="ESTÁGIO/CURSO">ESTÁGIO/CURSO</option>
+                            <option value="BAIXADA">BAIXADA</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Viatura Disponível</label>
+                        <select id="m-viatura">
+                            <option value="">Carregando...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <span class="material-icons" style="vertical-align:middle;font-size:1rem;">event</span>
+                            Data de Disponibilidade p/ Vistoria
+                        </label>
+                        <input type="date" id="m-data-agendamento" title="Selecione a data em que esta viatura ficará disponível para vistoria">
+                        <small style="color:#888;font-size:0.75rem;margin-top:2px;">Se não preenchido, aparecerá somente hoje.</small>
+                    </div>
+
+                    <button class="btn-lancar" onclick="salvarNoMapa()">
+                        <span class="material-icons">send</span> LANÇAR NO MAPA
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Guarnição</th>
+                            <th>Viatura / Modelo</th>
+                            <th>Placa</th>
+                            <th>Lançado em</th>
+                            <th>Data p/ Vistoria</th>
+                            <th>Responsável</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-mapa">
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </section>
+
+    <footer>
+        &copy; 2024 - Seção de Frota 10º BPM - Todos os direitos reservados.
+    </footer>
+
+<script src="../js/mapa-diario.js"></script>
+</body>
+
+</html>

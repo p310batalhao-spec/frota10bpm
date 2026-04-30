@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Vistoria — 10º BPM</title>
+    <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --azul:      #1a2744;
+            --azul-mid:  #2e3f6e;
+            --ouro:      #c8a415;
+            --ouro-claro:#f0d86a;
+            --fundo:     #f0f2f5;
+            --card:      #ffffff;
+            --texto:     #1a2744;
+            --success:   #28a745;
+            --danger:    #dc3545;
+            --warning:   #e09c00;
+            --radius:    12px;
+            --sombra:    0 4px 20px rgba(0,0,0,.10);
+        }
+
+        body {
+            font-family: 'Barlow', sans-serif;
+            background: var(--fundo);
+            color: var(--texto);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ══ HEADER ══════════════════════════════════════════ */
+        header {
+            background: var(--azul);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-info-left { display: flex; align-items: center; gap: 14px; }
+        .brasao { width: 58px; height: auto; }
+        .cabecalhotexto h1 { font-size: .98rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; }
+        .cabecalhotexto h3 { font-size: .72rem; font-weight: 400; color: var(--ouro); letter-spacing: 1px; }
+        .header-info-right { display: flex; align-items: center; gap: 18px; }
+        .relogio { font-size: .75rem; text-align: right; line-height: 1.6; color: #cdd9f5; }
+        .exibirusuario p { font-size: .72rem; text-align: right; line-height: 1.4; }
+        .exibirusuario .user-nome { font-weight: 700; color: var(--ouro); font-size: .85rem; }
+
+        /* ══ LAYOUT ══════════════════════════════════════════ */
+        .pagecomplete { display: flex; flex: 1; }
+
+        .navegacao {
+            width: 110px;
+            background: var(--azul);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 0;
+            gap: 2px;
+            position: sticky;
+            top: 78px;
+            height: calc(100vh - 78px);
+            overflow-y: auto;
+        }
+        .navegacao a, .navegacao button {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 5px; padding: 11px 6px;
+            width: 100%; color: #cdd9f5; text-decoration: none;
+            font-size: .62rem; text-align: center;
+            border: none; background: transparent; cursor: pointer;
+            transition: background .18s, color .18s;
+        }
+        .navegacao a:hover, .navegacao button:hover, .navegacao a.active {
+            background: var(--ouro); color: var(--azul);
+        }
+        .navegacao a img, .navegacao button img { filter: invert(1) brightness(1.4); }
+        .navegacao a:hover img, .navegacao button:hover img, .navegacao a.active img { filter: invert(0) brightness(.2); }
+        .navegacao p { line-height: 1.25; }
+        .nav-separator { width: 60%; border: none; border-top: 1px solid rgba(255,255,255,.15); margin: 6px 0; }
+
+        main { flex: 1; padding: 26px; overflow-y: auto; }
+
+        /* ══ TOPO DA PÁGINA ══════════════════════════════════ */
+        .page-header { margin-bottom: 22px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+        .page-header-left h2 { font-size: 1.18rem; font-weight: 800; color: var(--azul); font-family: 'Barlow Condensed', sans-serif; letter-spacing: .5px; }
+        .page-header-left p { font-size: .86rem; color: #666; margin-top: 4px; }
+
+        /* ══ BARRA DE AÇÕES ══════════════════════════════════ */
+        .actions-bar {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 18px; flex-wrap: wrap;
+        }
+        .busca-input {
+            padding: 9px 14px; border: 1.5px solid #ddd; border-radius: 9px;
+            font-size: .85rem; outline: none; width: 260px;
+            transition: border-color .2s; font-family: inherit;
+        }
+        .busca-input:focus { border-color: var(--ouro); }
+        .filtro-status {
+            padding: 9px 14px; border: 1.5px solid #ddd; border-radius: 9px;
+            font-size: .85rem; outline: none; cursor: pointer;
+            background: white; color: var(--azul); font-family: inherit;
+        }
+        #contador-registros { font-size: .78rem; color: #888; margin-left: auto; }
+
+        /* ══ TABELA ══════════════════════════════════════════ */
+        .tabela-wrapper {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--sombra);
+            overflow: auto;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+        table thead tr { background: var(--azul); color: white; }
+        table thead th { padding: 12px 14px; text-align: left; font-weight: 700; letter-spacing: .4px; white-space: nowrap; font-family: 'Barlow Condensed', sans-serif; font-size: .82rem; text-transform: uppercase; }
+        table tbody tr { transition: background .12s; }
+        table tbody tr:nth-child(even) { background: #f7f9fc; }
+        table tbody tr:hover { background: #eef2ff; }
+        table tbody td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+
+        .btn-acao {
+            padding: 5px 12px; border: none; border-radius: 6px;
+            font-size: .73rem; cursor: pointer; font-weight: 700;
+            transition: opacity .15s, transform .1s;
+            display: inline-flex; align-items: center; gap: 4px;
+            font-family: 'Barlow Condensed', sans-serif; letter-spacing: .3px;
+        }
+        .btn-acao:hover { opacity: .82; }
+        .btn-acao:active { transform: scale(.96); }
+        .btn-acao .material-icons { font-size: .95rem; }
+        .btn-relatorio { background: var(--azul-mid); color: white; margin-right: 5px; }
+        .btn-deletar   { background: var(--danger);   color: white; }
+
+        /* ══ MODAL BASE ══════════════════════════════════════ */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,.6); z-index: 500;
+            align-items: center; justify-content: center;
+            padding: 16px;
+        }
+        .modal-overlay.open { display: flex; }
+
+        /* ══ MODAL RELATÓRIO ══════════════════════════════════ */
+        .modal-relatorio {
+            background: white; border-radius: var(--radius);
+            width: 100%; max-width: 820px;
+            max-height: 96vh; overflow-y: auto;
+            box-shadow: 0 30px 80px rgba(0,0,0,.4);
+            animation: modalIn .28s cubic-bezier(.22,1,.36,1);
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(20px) scale(.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Cabeçalho institucional do relatório */
+        .rel-header {
+            background: var(--azul);
+            color: white;
+            padding: 0;
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+        .rel-header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            border-bottom: 3px solid var(--ouro);
+        }
+        .rel-header-left { display: flex; align-items: center; gap: 16px; }
+        .rel-brasao-placeholder img { width: 52px; }
+        .rel-inst h2 {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1rem; font-weight: 800; letter-spacing: 1.5px;
+            text-transform: uppercase; line-height: 1.2;
+        }
+        .rel-inst p { font-size: .72rem; color: #cdd9f5; margin-top: 3px; letter-spacing: .5px; }
+        .rel-header-right { text-align: right; }
+        .rel-tipo-doc {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.25rem; font-weight: 800;
+            color: var(--ouro); letter-spacing: 2px; text-transform: uppercase;
+            line-height: 1;
+        }
+        .rel-num-doc { font-size: .72rem; color: #aab8d8; margin-top: 4px; }
+        .rel-close-btn {
+            position: absolute; top: 14px; right: 18px;
+            background: none; border: none; color: rgba(255,255,255,.7);
+            cursor: pointer; font-size: 1.4rem; line-height: 1;
+            transition: color .15s;
+        }
+        .rel-close-btn:hover { color: white; }
+
+        .rel-body { padding: 24px; position: relative; }
+
+        /* Faixa identificação principal */
+        .rel-id-strip {
+            display: flex; align-items: stretch; gap: 0;
+            background: var(--fundo); border-radius: 10px;
+            overflow: hidden; margin-bottom: 22px;
+            border: 1px solid #e2e8f0;
+        }
+        .rel-id-placa {
+            background: var(--azul);
+            color: white;
+            padding: 16px 22px;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; flex-shrink: 0;
+            min-width: 110px;
+        }
+        .rel-id-placa .placa-label { font-size: .6rem; text-transform: uppercase; letter-spacing: 1px; color: #aab8d8; margin-bottom: 4px; }
+        .rel-id-placa .placa-val {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.5rem; font-weight: 800; letter-spacing: 3px;
+        }
+        .rel-id-middle {
+            flex: 1; padding: 14px 18px;
+            display: flex; flex-direction: column; justify-content: center;
+            border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;
+        }
+        .rel-id-middle .id-prefixo {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.15rem; font-weight: 800; color: var(--azul);
+        }
+        .rel-id-middle .id-guarnicao { font-size: .8rem; color: #555; margin-top: 3px; }
+        .rel-id-right { padding: 14px 18px; display: flex; flex-direction: column; justify-content: center; align-items: flex-end; flex-shrink: 0; }
+        .rel-id-right .id-data { font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 700; color: var(--azul); }
+        .rel-id-right .id-hora { font-size: .78rem; color: #888; margin-top: 3px; }
+
+        /* Seções do relatório */
+        .rel-section { margin-bottom: 20px; }
+        .rel-section-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: .75rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1.5px; color: var(--ouro);
+            border-bottom: 1.5px solid var(--ouro);
+            padding-bottom: 5px; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .rel-section-title .material-icons { font-size: .95rem; }
+
+        /* Grid de campos */
+        .rel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+        .rel-campo {
+            background: #f8f9fc; border-radius: 8px; padding: 10px 13px;
+            border: 1px solid #eaecf0;
+        }
+        .rel-campo .rc-label {
+            font-size: .62rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .5px; color: #94a3b8;
+        }
+        .rel-campo .rc-valor {
+            font-size: .88rem; font-weight: 700; color: var(--azul);
+            margin-top: 3px; word-break: break-word;
+        }
+
+        /* Checklist */
+        .checklist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+        .check-item {
+            display: flex; align-items: center; gap: 8px;
+            border-radius: 8px; padding: 9px 12px;
+            border: 1px solid;
+        }
+        .check-ok  { background: #f0fdf4; border-color: #bbf7d0; }
+        .check-nok { background: #fff5f5; border-color: #fecaca; }
+        .check-neutral { background: #fffbeb; border-color: #fde68a; }
+        .check-item .material-icons { font-size: 1.1rem; flex-shrink: 0; }
+        .check-ok  .material-icons { color: var(--success); }
+        .check-nok .material-icons { color: var(--danger); }
+        .check-neutral .material-icons { color: var(--warning); }
+        .check-item .ci-label { font-size: .76rem; font-weight: 600; color: var(--texto); line-height: 1.3; }
+        .check-item .ci-sub   { font-size: .67rem; color: #888; margin-top: 1px; }
+
+        /* Observações */
+        .rel-obs {
+            background: #fffbea; border: 1px solid #fde68a;
+            border-radius: 8px; padding: 13px 15px;
+            font-size: .84rem; color: #5c4a00; line-height: 1.6;
+        }
+        .rel-obs-vazio { color: #94a3b8; font-style: italic; }
+
+        /* Assinatura */
+        .assinatura-box {
+            border: 1.5px solid #e2e8f0; border-radius: 10px;
+            overflow: hidden; background: #fafbfc;
+        }
+        .assinatura-header {
+            background: var(--fundo); padding: 8px 14px;
+            font-size: .68rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .8px; color: #64748b;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .assinatura-header .material-icons { font-size: .85rem; }
+        .assinatura-img-wrap {
+            display: flex; align-items: center; justify-content: center;
+            padding: 16px; min-height: 110px; background: white;
+        }
+        .assinatura-img-wrap img { max-width: 100%; max-height: 130px; }
+        .assinatura-vazia {
+            color: #cbd5e1; font-size: .82rem;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .assinatura-vazia .material-icons { font-size: 1.2rem; }
+        .assinatura-rodape {
+            background: var(--fundo); padding: 8px 14px;
+            border-top: 1px solid #e2e8f0;
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: .72rem; color: #64748b;
+        }
+        .assinatura-rodape strong { color: var(--azul); font-weight: 700; }
+
+        /* Rodapé do modal */
+        .rel-footer {
+            padding: 16px 24px 22px;
+            display: flex; justify-content: flex-end; gap: 10px;
+            border-top: 1px solid #eee;
+        }
+        .btn-imprimir {
+            padding: 10px 22px;
+            background: var(--azul); color: white;
+            border: none; border-radius: 9px;
+            font-size: .88rem; font-weight: 700;
+            cursor: pointer; display: flex; align-items: center; gap: 6px;
+            font-family: 'Barlow Condensed', sans-serif; letter-spacing: .5px;
+            transition: background .2s;
+        }
+        .btn-imprimir:hover { background: var(--ouro); color: var(--azul); }
+        .btn-fechar-rel {
+            padding: 10px 22px; background: #eee; color: #555;
+            border: none; border-radius: 9px; font-size: .88rem;
+            cursor: pointer; font-weight: 600; transition: background .2s;
+        }
+        .btn-fechar-rel:hover { background: #ddd; }
+
+        /* ══ MODAL CONFIRMAÇÃO EXCLUSÃO ══════════════════════ */
+        .modal-box-sm { background: white; border-radius: var(--radius); width: 100%; max-width: 420px; overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,.4); animation: modalIn .25s ease; }
+        .confirm-header { background: var(--danger); color: white; padding: 16px 22px; display: flex; justify-content: space-between; align-items: center; }
+        .confirm-header h3 { font-size: .98rem; font-weight: 700; font-family: 'Barlow Condensed', sans-serif; display: flex; align-items: center; gap: 6px; }
+        .confirm-close { background: none; border: none; color: white; cursor: pointer; font-size: 1.3rem; opacity: .7; }
+        .confirm-close:hover { opacity: 1; }
+        .confirm-body { padding: 28px 24px; text-align: center; }
+        .confirm-icon { font-size: 2.8rem !important; color: var(--danger); display: block; margin-bottom: 12px; }
+        .confirm-body h4 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+        .confirm-body p { font-size: .85rem; color: #666; line-height: 1.5; }
+        .confirm-destaque { font-weight: 700; color: var(--azul); }
+        .confirm-footer { padding: 0 24px 24px; display: flex; gap: 10px; }
+        .btn-del-confirm { flex: 1; padding: 12px; background: var(--danger); color: white; border: none; border-radius: 9px; font-size: .9rem; font-weight: 700; cursor: pointer; transition: background .2s; font-family: 'Barlow Condensed', sans-serif; letter-spacing: .5px; }
+        .btn-del-confirm:hover { background: #b02a37; }
+        .btn-del-cancel  { padding: 12px 22px; background: #eee; color: #555; border: none; border-radius: 9px; font-size: .9rem; cursor: pointer; transition: background .2s; }
+        .btn-del-cancel:hover { background: #ddd; }
+
+        footer { background: var(--azul); color: #cdd9f5; text-align: center; padding: 10px; font-size: .73rem; }
+
+        /* ══ PRINT ══════════════════════════════════════════ */
+        @media print {
+            header, .navegacao, footer, .rel-footer, .actions-bar,
+            .tabela-wrapper, .page-header, .btn-relatorio, .btn-deletar,
+            .modal-overlay { display: none !important; }
+            body { background: white; }
+            .modal-overlay.open { display: block !important; position: static !important; background: none !important; padding: 0 !important; }
+            .modal-relatorio { box-shadow: none; max-height: none; animation: none; }
+            .pagecomplete { display: block; }
+            main { padding: 0; }
+        }
+
+        /* ══ RESPONSIVE ══════════════════════════════════════ */
+        @media (max-width: 700px) {
+            .navegacao { width: 68px; }
+            .navegacao p { display: none; }
+            .relogio { display: none; }
+            main { padding: 14px; }
+            .actions-bar { flex-direction: column; align-items: flex-start; }
+            .busca-input { width: 100%; }
+            .rel-id-strip { flex-direction: column; }
+            .rel-id-right { align-items: flex-start; }
+            .rel-grid { grid-template-columns: 1fr 1fr; }
+            .checklist-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="header-info-left">
+            <img class="brasao" src="/img/brasao.png" alt="Brasão 10º BPM">
+            <div class="cabecalhotexto">
+                <h1>Sistema de Controle de Frota</h1>
+                <h3>10º Batalhão de Polícia Militar</h3>
+            </div>
+        </div>
+        <div class="header-info-right">
+            <div class="relogio" id="relogio"></div>
+            <div class="exibirusuario" id="user-info"></div>
+        </div>
+    </header>
+
+    <section class="pagecomplete">
+
+        <!-- NAV LATERAL -->
+        <nav class="navegacao">
+            <a href="../index.html">
+                <img width="40" height="40" src="https://img.icons8.com/fluency-systems-regular/48/home--v1.png" alt="home">
+                <p>Home</p>
+            </a>
+            <a href="/page/cadastro-viaturas.html">
+                <img width="40" height="40" src="https://img.icons8.com/external-kiranshastry-solid-kiranshastry/64/external-police-car-law-and-crime-kiranshastry-solid-kiranshastry.png" alt="viaturas">
+                <p>Viaturas</p>
+            </a>
+            <a href="/page/cadastro-motoristas.html">
+                <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/user--v1.png" alt="motoristas">
+                <p>Motoristas</p>
+            </a>
+            <a href="/page/manutencao.html">
+                <img width="40" height="40" src="https://img.icons8.com/ios/50/maintenance.png" alt="manutencao">
+                <p>Manutenção</p>
+            </a>
+            <a href="/page/mapa_diario.html">
+                <img width="40" height="40" src="https://img.icons8.com/ios/50/map--v1.png" alt="mapa">
+                <p>Mapa Diário</p>
+            </a>
+            <a href="/page/check_vistorias.html">
+                <img width="40" height="40" src="https://img.icons8.com/ios-filled/50/inspection.png" alt="vistorias">
+                <p>Vistorias</p>
+            </a>
+            <a href="/relatorios/relatorio_vistoria.html" class="active">
+                <img width="40" height="40" src="https://img.icons8.com/ios/50/document--v1.png" alt="relatorio">
+                <p>Relatório</p>
+            </a>
+            <a href="/page/sinistros.html">
+                <img width="40" height="40" src="https://img.icons8.com/ios/50/car-accident.png" alt="sinistros">
+                <p>Sinistros</p>
+            </a>
+            <hr class="nav-separator">
+            <button onclick="logout()">
+                <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/exit.png" alt="Sair">
+                <p>Sair</p>
+            </button>
+        </nav>
+
+        <!-- MAIN -->
+        <main>
+            <div class="page-header">
+                <div class="page-header-left">
+                    <h2>📋 Relatório de Vistorias</h2>
+                    <p>Consulte e imprima os relatórios completos das vistorias realizadas.</p>
+                </div>
+            </div>
+
+            <!-- BARRA DE AÇÕES -->
+            <div class="actions-bar">
+                <input class="busca-input" type="text" id="busca"
+                    placeholder="🔍 Buscar motorista, placa, prefixo..."
+                    oninput="aplicarFiltros()">
+                <select class="filtro-status" id="filtro-periodo" onchange="aplicarFiltros()">
+                    <option value="">Todos os períodos</option>
+                    <option value="hoje">Hoje</option>
+                    <option value="semana">Últimos 7 dias</option>
+                    <option value="mes">Último mês</option>
+                </select>
+                <span id="contador-registros"></span>
+            </div>
+
+            <!-- TABELA -->
+            <div class="tabela-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Prefixo</th>
+                            <th>Placa</th>
+                            <th>Data</th>
+                            <th>Hora</th>
+                            <th>Motorista</th>
+                            <th>Posto/Grad.</th>
+                            <th>Matrícula</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-vistorias">
+                        <tr>
+                            <td colspan="8" style="text-align:center;padding:36px;color:#aaa">
+                                <span class="material-icons" style="font-size:2rem;display:block;margin-bottom:8px;color:#ddd">hourglass_empty</span>
+                                Carregando vistorias...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </section>
+
+    <footer>
+        <h4>Seção de Operações — P3 / 10º Batalhão de Polícia Militar</h4>
+    </footer>
+
+
+    <!-- ══════════════════════════════════════════════════════
+         MODAL — RELATÓRIO COMPLETO DA VISTORIA
+    ══════════════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="modal-relatorio">
+        <div class="modal-relatorio">
+
+            <!-- Cabeçalho institucional -->
+            <div class="rel-header" style="position:relative">
+                <div class="rel-header-inner">
+                    <div class="rel-header-left">
+                        <div class="rel-brasao-placeholder">
+                            <img src="/img/brasao.png" alt="Brasão" onerror="this.style.display='none'">
+                        </div>
+                        <div class="rel-inst">
+                            <h2>10º Batalhão de Polícia Militar</h2>
+                            <p>SEÇÃO DE CONTROLE DE FROTA E TRÂNSITO - P4 | GARAGEM</p>
+                            <p style="margin-top:2px">SISTEMA DE CONTROLE DE FROTA</p>
+                        </div>
+                    </div>
+                    <div class="rel-header-right">
+                        <div class="rel-tipo-doc">RELATÓRIO DE VISTORIA</div>
+                        <div class="rel-num-doc" id="rel-num-doc">Nº —</div>
+                    </div>
+                </div>
+                <button class="rel-close-btn" onclick="fecharRelatorio()" title="Fechar">✕</button>
+            </div>
+
+            <!-- Corpo do relatório -->
+            <div class="rel-body">
+
+                <!-- Identificação rápida -->
+                <div class="rel-id-strip">
+                    <div class="rel-id-placa">
+                        <div class="placa-label">Placa</div>
+                        <div class="placa-val" id="rel-placa">—</div>
+                    </div>
+                    <div class="rel-id-middle">
+                        <div class="id-prefixo" id="rel-prefixo">—</div>
+                        <div class="id-guarnicao" id="rel-guarnicao">—</div>
+                    </div>
+                    <div class="rel-id-right">
+                        <div class="id-data" id="rel-data">—</div>
+                        <div class="id-hora" id="rel-hora">—</div>
+                    </div>
+                </div>
+
+                <!-- Seção 1: Dados do Condutor -->
+                <div class="rel-section">
+                    <div class="rel-section-title">
+                        <span class="material-icons">badge</span>
+                        Dados do Condutor
+                    </div>
+                    <div class="rel-grid" id="rel-grid-condutor"></div>
+                </div>
+
+                <!-- Seção 2: Dados da Viatura -->
+                <div class="rel-section">
+                    <div class="rel-section-title">
+                        <span class="material-icons">local_shipping</span>
+                        Dados da Viatura
+                    </div>
+                    <div class="rel-grid" id="rel-grid-viatura"></div>
+                </div>
+
+                <!-- Seção 3: Checklist de Inspeção -->
+                <div class="rel-section" id="rel-section-checklist">
+                    <div class="rel-section-title">
+                        <span class="material-icons">fact_check</span>
+                        Checklist de Inspeção
+                    </div>
+                    <div class="checklist-grid" id="rel-checklist"></div>
+                </div>
+
+                <!-- Seção 4: Observações -->
+                <div class="rel-section">
+                    <div class="rel-section-title">
+                        <span class="material-icons">notes</span>
+                        Observações / Avarias Registradas
+                    </div>
+                    <div class="rel-obs" id="rel-obs"></div>
+                </div>
+
+                <!-- Seção 5: Assinatura -->
+                <div class="rel-section">
+                    <div class="rel-section-title">
+                        <span class="material-icons">draw</span>
+                        Assinatura Eletrônica do Condutor
+                    </div>
+                    <div class="assinatura-box">
+                        <div class="assinatura-header">
+                            <span class="material-icons">verified</span>
+                            Assinatura capturada digitalmente no momento da vistoria
+                        </div>
+                        <div class="assinatura-img-wrap" id="rel-assinatura-wrap"></div>
+                        <div class="assinatura-rodape">
+                            <span>Condutor: <strong id="rel-ass-nome">—</strong></span>
+                            <span>Matrícula: <strong id="rel-ass-mat">—</strong></span>
+                            <span id="rel-ass-data">—</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /rel-body -->
+
+            <!-- Rodapé do modal -->
+            <div class="rel-footer">
+                <button class="btn-fechar-rel" onclick="fecharRelatorio()">Fechar</button>
+                <button class="btn-imprimir" onclick="imprimirRelatorio()">
+                    <span class="material-icons" style="font-size:1rem">print</span>
+                    Imprimir / Salvar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════
+         MODAL — CONFIRMAÇÃO DE EXCLUSÃO
+    ══════════════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="modal-confirmar-del">
+        <div class="modal-box-sm">
+            <div class="confirm-header">
+                <h3><span class="material-icons">delete_forever</span> Confirmar Exclusão</h3>
+                <button class="confirm-close" onclick="fecharConfirmacaoDel()">✕</button>
+            </div>
+            <div class="confirm-body">
+                <span class="material-icons confirm-icon">warning</span>
+                <h4>Excluir esta vistoria?</h4>
+                <p>
+                    A vistoria da viatura <span class="confirm-destaque" id="del-prefixo-label">—</span>
+                    registrada em <span class="confirm-destaque" id="del-data-label">—</span>
+                    pelo motorista <span class="confirm-destaque" id="del-motorista-label">—</span>
+                    será <strong>permanentemente excluída</strong>.<br><br>
+                    Esta ação <strong>não pode ser desfeita</strong>.
+                </p>
+            </div>
+            <div class="confirm-footer">
+                <button class="btn-del-cancel" onclick="fecharConfirmacaoDel()">Cancelar</button>
+                <button class="btn-del-confirm" id="btn-confirmar-del" onclick="confirmarExclusao()">
+                    <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">delete_forever</span>
+                    Sim, excluir
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+    // ================================================================
+    // FIREBASE
+    // ================================================================
+    const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
+
+    async function fb_get(no) {
+        const r = await fetch(`${FB_URL}/${no}.json`);
+        return r.json();
+    }
+    async function fb_delete(no, id) {
+        return fetch(`${FB_URL}/${no}/${id}.json`, { method: 'DELETE' });
+    }
+
+    // ================================================================
+    // ESTADO
+    // ================================================================
+    let vistoriasCache = [];
+    let _idParaExcluir = null;
+
+    // ================================================================
+    // MAPA COMPLETO DOS CAMPOS DO CHECKLIST (vistoria.html)
+    // ================================================================
+    const CHECKLIST_MAP = {
+        limpeza:      { label: 'Limpeza Externa/Interna',              tipo: 'condicao' },
+        equipamentos: { label: 'Equip. (Macaco/Chave/Triângulo)',       tipo: 'alteracao' },
+        farois:       { label: 'Faróis (alto e baixo)',                 tipo: 'alteracao' },
+        iluminacao:   { label: 'Iluminação (freios/ré/placa/laterais)', tipo: 'alteracao' },
+        ar:           { label: 'Ar condicionado',                       tipo: 'alteracao' },
+        giroflex:     { label: 'Giroflex e Sirenes',                    tipo: 'alteracao' },
+        fluido:       { label: 'Fluído do radiador/reservatório',       tipo: 'alteracao' },
+        oleo:         { label: 'Nível de óleo (motor/freio/hidr.)',     tipo: 'alteracao' },
+        vidros:       { label: 'Vidros',                                tipo: 'alteracao' },
+        retrovisores: { label: 'Retrovisores',                          tipo: 'alteracao' },
+        carroceria:   { label: 'Carroceria (capô/portas/parachoques)',  tipo: 'alteracao' },
+        pneus:        { label: 'Pneus e estepe',                        tipo: 'alteracao' },
+        estofados:    { label: 'Estofados, forração e tapetes',         tipo: 'alteracao' },
+        limpadores:   { label: 'Limpadores',                            tipo: 'alteracao' },
+        radio:        { label: 'Rádio Comunicador',                     tipo: 'alteracao' },
+        capsula:      { label: 'Cápsula de retenção',                   tipo: 'alteracao' },
+    };
+
+    // Campos NÃO exibidos no checklist (são exibidos em outras seções)
+    const EXCLUIDOS = new Set([
+        'id','prefixo','placa','dataHora','motorista','posto','matricula',
+        'guarnicao','combustivel','km','km_inicial','km_final',
+        'observacoes','obs','assinatura',
+        'criadoEm','criadoPor','updatedAt','updatedBy','usuario',
+        'cpf','nomeCivil','nomeGuerra',
+    ]);
+
+    // ================================================================
+    // INIT
+    // ================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+        atualizarRelogio();
+        setInterval(atualizarRelogio, 1000);
+        const usuario = localStorage.getItem('frota_usuario');
+        if (usuario) {
+            document.getElementById('user-info').innerHTML =
+                `<p>Usuário:</p><p class="user-nome">${usuario}</p>`;
+        }
+        carregarVistorias();
+    });
+
+    function atualizarRelogio() {
+        const a = new Date();
+        const el = document.getElementById('relogio');
+        if (el) el.innerHTML =
+            `${a.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'long',year:'numeric'})} <br> ${a.toLocaleTimeString('pt-BR')}`;
+    }
+
+    function logout() {
+        if (confirm('Deseja encerrar a sessão?')) {
+            localStorage.removeItem('frota_usuario');
+            localStorage.removeItem('frota_perfil');
+            window.location.href = '/page/login.html';
+        }
+    }
+
+    // ================================================================
+    // CARREGAR VISTORIAS
+    // ================================================================
+    async function carregarVistorias() {
+        const tabela = document.getElementById('tabela-vistorias');
+        try {
+            const dados = await fb_get('vistorias');
+            if (!dados) {
+                tabela.innerHTML = vazio('Nenhuma vistoria encontrada.');
+                return;
+            }
+            vistoriasCache = Object.keys(dados)
+                .map(id => ({ id, ...dados[id] }))
+                .sort((a, b) => new Date(b.dataHora) - new Date(a.dataHora));
+            exibirDados(vistoriasCache);
+        } catch (e) {
+            console.error(e);
+            tabela.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--danger)">
+                Erro ao carregar dados. Verifique a conexão.</td></tr>`;
+        }
+    }
+
+    function vazio(msg) {
+        return `<tr><td colspan="8" style="text-align:center;padding:36px;color:#aaa">
+            <span class="material-icons" style="font-size:2rem;display:block;margin-bottom:8px;color:#ddd">search_off</span>
+            ${msg}</td></tr>`;
+    }
+
+    // ================================================================
+    // EXIBIR TABELA
+    // ================================================================
+    function exibirDados(lista) {
+        const tabela = document.getElementById('tabela-vistorias');
+        if (!lista.length) {
+            tabela.innerHTML = vazio('Nenhuma vistoria encontrada.');
+            document.getElementById('contador-registros').textContent = '0 registros';
+            return;
+        }
+        tabela.innerHTML = lista.map(v => {
+            const dataObj = new Date(v.dataHora);
+            const dataF   = isNaN(dataObj) ? (v.dataHora || '—') : dataObj.toLocaleDateString('pt-BR');
+            const horaF   = isNaN(dataObj) ? '—' : dataObj.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+            return `
+            <tr>
+                <td><strong>${v.prefixo || '—'}</strong></td>
+                <td>${v.placa || '—'}</td>
+                <td>${dataF}</td>
+                <td>${horaF}</td>
+                <td>${v.motorista || '—'}</td>
+                <td>${v.posto || '—'}</td>
+                <td>${v.matricula || '—'}</td>
+                <td style="white-space:nowrap">
+                    <button class="btn-acao btn-relatorio"
+                        onclick="abrirRelatorio('${v.id}')"
+                        title="Ver relatório completo">
+                        <span class="material-icons">description</span>
+                        Relatório
+                    </button>
+                    <button class="btn-acao btn-deletar"
+                        onclick="pedirConfirmacaoDel('${v.id}')"
+                        title="Excluir esta vistoria">
+                        <span class="material-icons">delete</span>
+                        Excluir
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+        document.getElementById('contador-registros').textContent = `${lista.length} registro(s)`;
+    }
+
+    // ================================================================
+    // FILTROS
+    // ================================================================
+    function aplicarFiltros() {
+        const termo   = document.getElementById('busca').value.toLowerCase();
+        const periodo = document.getElementById('filtro-periodo').value;
+        const agora   = new Date();
+
+        let filtrados = vistoriasCache.filter(v => {
+            const haystack = `${v.motorista||''} ${v.prefixo||''} ${v.placa||''} ${v.matricula||''} ${v.posto||''} ${v.guarnicao||''}`.toLowerCase();
+            return haystack.includes(termo);
+        });
+
+        if (periodo) {
+            filtrados = filtrados.filter(v => {
+                const d = new Date(v.dataHora);
+                if (isNaN(d)) return false;
+                if (periodo === 'hoje') {
+                    return d.toDateString() === agora.toDateString();
+                }
+                if (periodo === 'semana') {
+                    return (agora - d) <= 7 * 86400000;
+                }
+                if (periodo === 'mes') {
+                    return (agora - d) <= 30 * 86400000;
+                }
+                return true;
+            });
+        }
+
+        exibirDados(filtrados);
+    }
+
+    // ================================================================
+    // MODAL — RELATÓRIO COMPLETO
+    // ================================================================
+    function abrirRelatorio(id) {
+        const v = vistoriasCache.find(x => x.id === id);
+        if (!v) return;
+
+        const dataObj = new Date(v.dataHora);
+        const dataF   = isNaN(dataObj) ? (v.dataHora || '—')
+            : dataObj.toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+        const horaF   = isNaN(dataObj) ? '—'
+            : dataObj.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+        const dataSimples = isNaN(dataObj) ? '—' : dataObj.toLocaleDateString('pt-BR');
+
+        // Número do relatório (usa os últimos 6 chars do id Firebase)
+        document.getElementById('rel-num-doc').textContent = `Nº ${id.slice(-6).toUpperCase()}`;
+
+        // Faixa de identificação
+        document.getElementById('rel-placa').textContent    = v.placa    || '—';
+        document.getElementById('rel-prefixo').textContent  = v.prefixo  || '—';
+        document.getElementById('rel-guarnicao').textContent = v.guarnicao ? `Guarnição: ${v.guarnicao}` : '';
+        document.getElementById('rel-data').textContent     = dataF;
+        document.getElementById('rel-hora').textContent     = `🕐 ${horaF}`;
+
+        // Seção condutor
+        document.getElementById('rel-grid-condutor').innerHTML = montarGrid([
+            ['Nome do Motorista',  v.motorista],
+            ['Posto / Graduação',  v.posto],
+            ['Matrícula',          v.matricula],
+            ['Guarnição',          v.guarnicao],
+        ]);
+
+        // Seção viatura
+        document.getElementById('rel-grid-viatura').innerHTML = montarGrid([
+            ['Prefixo',            v.prefixo],
+            ['Placa',              v.placa],
+            ['Nível de Combustível', v.combustivel],
+            ['Odômetro (KM)',       v.km     ? Number(v.km).toLocaleString('pt-BR') + ' km'     : null],
+            ['KM Inicial',         v.km_inicial ? Number(v.km_inicial).toLocaleString('pt-BR') + ' km' : null],
+            ['KM Final',           v.km_final   ? Number(v.km_final).toLocaleString('pt-BR')   + ' km' : null],
+            ['Data da Vistoria',   dataSimples],
+            ['Hora da Vistoria',   horaF],
+        ]);
+
+        // Checklist
+        const items = [];
+        // Primeiro, itens mapeados em CHECKLIST_MAP
+        for (const [chave, cfg] of Object.entries(CHECKLIST_MAP)) {
+            if (v[chave] === undefined || v[chave] === null || v[chave] === '') continue;
+            const valor    = String(v[chave]).trim();
+            const valorObs = v[`${chave}_outro`] ? String(v[`${chave}_outro`]).trim() : '';
+            const status   = avaliarItem(valor, cfg.tipo);
+            items.push({ label: cfg.label, valor, valorObs, status });
+        }
+        // Depois, quaisquer outros campos booleanos/texto não mapeados
+        for (const [chave, valor] of Object.entries(v)) {
+            if (EXCLUIDOS.has(chave)) continue;
+            if (CHECKLIST_MAP[chave]) continue;
+            if (chave.endsWith('_outro')) continue; // já tratado acima
+            if (valor === null || valor === undefined || valor === '') continue;
+            const status = avaliarItem(String(valor), 'alteracao');
+            items.push({ label: chaveParaLabel(chave), valor: String(valor), valorObs: '', status });
+        }
+
+        const secaoCheck = document.getElementById('rel-section-checklist');
+        const gridCheck  = document.getElementById('rel-checklist');
+        if (items.length) {
+            secaoCheck.style.display = '';
+            gridCheck.innerHTML = items.map(item => {
+                const cls = item.status === 'ok' ? 'check-ok'
+                    : item.status === 'nok'      ? 'check-nok'
+                    : 'check-neutral';
+                const icon = item.status === 'ok' ? 'check_circle'
+                    : item.status === 'nok'       ? 'cancel'
+                    : 'warning';
+                return `
+                <div class="check-item ${cls}">
+                    <span class="material-icons">${icon}</span>
+                    <div>
+                        <div class="ci-label">${item.label}</div>
+                        <div class="ci-sub">${item.valorObs || item.valor}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        } else {
+            secaoCheck.style.display = 'none';
+        }
+
+        // Observações
+        const obs = v.observacoes || v.obs || '';
+        document.getElementById('rel-obs').innerHTML = obs
+            ? obs.replace(/\n/g, '<br>')
+            : '<span class="rel-obs-vazio">Nenhuma observação ou avaria registrada.</span>';
+
+        // Assinatura — suporta eletrônica (objeto) e legado (base64 string)
+        const wrap = document.getElementById('rel-assinatura-wrap');
+        const ass  = v.assinatura;
+
+        if (ass && typeof ass === 'object' && ass.tipo === 'eletronica_cpf') {
+            // ── Assinatura eletrônica via CPF ──
+            const cpfF = ass.cpf
+                ? ass.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+                : '—';
+            const horaAss = ass.horaConfirmacaoF || (ass.horaConfirmacao
+                ? new Date(ass.horaConfirmacao).toLocaleString('pt-BR') : '—');
+            wrap.innerHTML = `
+                <div style="background:#f0fff4;border:1.5px solid #28a745;border-radius:8px;padding:12px 16px">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                        <span class="material-icons" style="color:#28a745;font-size:1.3rem">verified_user</span>
+                        <strong style="font-size:.88rem;color:#155724">Assinatura Eletrônica Confirmada</strong>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:.82rem">
+                        <div><span style="color:#888;font-size:.7rem;text-transform:uppercase;display:block">Nome Completo</span>
+                             <strong>${ass.nomeCivil || ass.nomeGuerra || '—'}</strong></div>
+                        <div><span style="color:#888;font-size:.7rem;text-transform:uppercase;display:block">Graduação</span>
+                             <strong>${ass.posto || '—'}</strong></div>
+                        <div><span style="color:#888;font-size:.7rem;text-transform:uppercase;display:block">Matrícula</span>
+                             <strong>${ass.matricula || '—'}</strong></div>
+                        <div><span style="color:#888;font-size:.7rem;text-transform:uppercase;display:block">CPF</span>
+                             <strong>${cpfF}</strong></div>
+                    </div>
+                    <div style="margin-top:8px;font-size:.72rem;color:#28a745">
+                        ✅ Confirmado em: ${horaAss}
+                    </div>
+                </div>`;
+        } else if (ass && typeof ass === 'string' && ass.startsWith('data:')) {
+            // ── Assinatura canvas legado ──
+            wrap.innerHTML = `<img src="${ass}" alt="Assinatura do condutor" style="max-height:130px;border-radius:4px">`;
+        } else {
+            wrap.innerHTML = `
+                <div class="assinatura-vazia">
+                    <span class="material-icons">draw</span>
+                    Assinatura não disponível para este registro.
+                </div>`;
+        }
+
+        // Nome/matrícula abaixo da assinatura — usa dados da assinatura se disponíveis
+        const nomeAss = (ass && ass.nomeCivil) ? ass.nomeCivil
+                      : (ass && ass.nomeGuerra) ? ass.nomeGuerra
+                      : (v.motorista || '—');
+        const postoAss = (ass && ass.posto) ? ass.posto + ' ' : '';
+        const matAss   = (ass && ass.matricula) ? ass.matricula : (v.matricula || '—');
+
+        document.getElementById('rel-ass-nome').textContent = postoAss + nomeAss;
+        document.getElementById('rel-ass-mat').textContent  = matAss;
+        document.getElementById('rel-ass-data').textContent = `Registrado em: ${dataSimples} às ${horaF}`;
+
+        document.getElementById('modal-relatorio').classList.add('open');
+    }
+
+    function avaliarItem(valor, tipo) {
+        const v = valor.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+        if (tipo === 'alteracao') {
+            if (v === 'sem alteracao') return 'ok';
+            if (v === 'com alteracao' || v === 'outro') return 'nok';
+            return 'neutral';
+        }
+        if (tipo === 'condicao') {
+            if (v === 'otimo' || v === 'bom') return 'ok';
+            if (v === 'regular') return 'neutral';
+            return 'nok';
+        }
+        return 'neutral';
+    }
+
+    function chaveParaLabel(chave) {
+        return chave
+            .replace(/_/g, ' ')
+            .replace(/([a-z])([A-Z])/g, '$1 $2')
+            .replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    function montarGrid(pares) {
+        const html = pares
+            .filter(([, v]) => v !== null && v !== undefined && v !== '' && v !== '—')
+            .map(([label, valor]) => `
+                <div class="rel-campo">
+                    <div class="rc-label">${label}</div>
+                    <div class="rc-valor">${valor}</div>
+                </div>`)
+            .join('');
+        return html || '<div style="color:#aaa;font-size:.82rem;padding:8px">Sem dados registrados.</div>';
+    }
+
+    function fecharRelatorio() {
+        document.getElementById('modal-relatorio').classList.remove('open');
+    }
+
+    function imprimirRelatorio() {
+        window.print();
+    }
+
+    // ================================================================
+    // EXCLUSÃO
+    // ================================================================
+    function pedirConfirmacaoDel(id) {
+        const v = vistoriasCache.find(x => x.id === id);
+        if (!v) return;
+        _idParaExcluir = id;
+        const dataObj = new Date(v.dataHora);
+        const dataF   = isNaN(dataObj) ? (v.dataHora || '—') : dataObj.toLocaleDateString('pt-BR');
+        document.getElementById('del-prefixo-label').textContent   = v.prefixo   || v.placa || '—';
+        document.getElementById('del-data-label').textContent      = dataF;
+        document.getElementById('del-motorista-label').textContent = v.motorista  || '—';
+        document.getElementById('modal-confirmar-del').classList.add('open');
+    }
+
+    function fecharConfirmacaoDel() {
+        document.getElementById('modal-confirmar-del').classList.remove('open');
+        _idParaExcluir = null;
+    }
+
+    async function confirmarExclusao() {
+        if (!_idParaExcluir) return;
+        const btn = document.getElementById('btn-confirmar-del');
+        btn.disabled    = true;
+        btn.textContent = 'Excluindo...';
+        try {
+            const resp = await fb_delete('vistorias', _idParaExcluir);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            vistoriasCache = vistoriasCache.filter(x => x.id !== _idParaExcluir);
+            exibirDados(vistoriasCache);
+            fecharConfirmacaoDel();
+        } catch (e) {
+            console.error(e);
+            alert('Erro ao excluir. Verifique a conexão com o Firebase.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">delete_forever</span> Sim, excluir';
+        }
+    }
+
+    // ================================================================
+    // FECHAR MODAIS AO CLICAR NO OVERLAY
+    // ================================================================
+    document.getElementById('modal-relatorio').addEventListener('click', function(e) {
+        if (e.target === this) fecharRelatorio();
+    });
+    document.getElementById('modal-confirmar-del').addEventListener('click', function(e) {
+        if (e.target === this) fecharConfirmacaoDel();
+    });
+    </script>
+</body>
+</html>

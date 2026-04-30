@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manutenção de Viaturas — 10º BPM</title>
+    <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="../css/manutencao.css">
+</head>
+<body>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading">
+    <div class="spinner"></div>
+    <span id="loading-msg">Processando planilha...</span>
+</div>
+
+<!-- HEADER -->
+<header>
+    <div class="header-info-left">
+        <img class="brasao" src="/img/brasao.png" alt="Brasão" onerror="this.style.display='none'">
+        <div class="cabecalhotexto">
+            <h1>10º Batalhão de Polícia Militar</h1>
+            <h3>Sistema de Controle de Frota</h3>
+        </div>
+    </div>
+    <div class="header-info-right">
+        <div class="relogio" id="relogio"></div>
+        <div class="user-notification">
+            <div class="exibirusuario" id="user-info">
+                <p>Carregando...</p>
+            </div>
+            <div class="notification-container" id="notif-toggle">
+                <span class="material-icons">notifications</span>
+                <div class="notif-badge" id="notif-count" style="display:none">0</div>
+            </div>
+            <div class="notif-dropdown" id="notif-dropdown">
+                <div class="notif-header">🔔 Notificações</div>
+                <div class="notif-list" id="notif-list">
+                    <div class="notif-empty">Nenhuma notificação.</div>
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.12);color:white" onclick="logout()">
+            <span class="material-icons" style="font-size:1rem">logout</span>
+        </button>
+    </div>
+</header>
+
+<div class="pagecomplete">
+    <!-- NAVEGAÇÃO LATERAL -->
+       <nav class="navegacao">
+        <a href="../index.html">
+            <img width="40" height="40" src="https://img.icons8.com/fluency-systems-regular/48/home--v1.png" alt="home">
+            <p>Home</p>
+        </a>
+        <a href="/page/cadastro-viaturas.html">
+            <img width="40" height="40" src="https://img.icons8.com/external-kiranshastry-solid-kiranshastry/64/external-police-car-law-and-crime-kiranshastry-solid-kiranshastry.png" alt="viaturas">
+            <p>Viaturas</p>
+        </a>
+        <a href="/page/cadastro-motoristas.html">
+            <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/user--v1.png" alt="motoristas">
+            <p>Motoristas</p>
+        </a>
+        <a href="/page/manutencao.html" class="active">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/maintenance.png" alt="manutencao">
+            <p>Manutenção</p>
+        </a>
+        <a href="/page/mapa_diario.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/map--v1.png" alt="mapa">
+            <p>Mapa Diário</p>
+        </a>
+        <a href="/page/check_vistorias.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios-filled/50/inspection.png" alt="vistorias">
+            <p>Vistorias</p>
+        </a>
+        <a href="/page/sinistros.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/car-accident.png" alt="sinistros">
+            <p>Sinistros</p>
+        </a>
+        <hr class="nav-separator">
+        <button onclick="logout()">
+            <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/exit.png" alt="Sair">
+            <p>Sair</p>
+        </button>
+    </nav>
+
+    <main>
+        <div class="page-title">
+            <h2>Manutenção de Viaturas</h2> 
+            <p>Controle de revisões, alertas de KM e dossiê completo por viatura.</p>
+        </div>
+
+        <!-- ALERTA CRÍTICO -->
+        <div class="alert-km-banner" id="alerta-banner">
+            <span class="material-icons">warning</span>
+            <span id="alerta-banner-texto"></span>
+        </div>
+
+        <!-- UPLOAD -->
+        <div class="upload-card">
+            <h3><span class="material-icons" style="color:var(--cor-destaque)">upload_file</span> Importar Planilha de Controle (.xls / .xlsx)</h3>
+            <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+                <span class="material-icons">table_chart</span>
+                <p><strong>Clique aqui</strong> ou arraste o arquivo Excel<br>
+                <span style="font-size:.75rem;color:#aaa">Aceita .xls, .xlsx, .xlsm — base para cadastro e atualização automática</span></p>
+            </div>
+            <input type="file" id="file-input" accept=".xls,.xlsx,.xlsm" onchange="processarPlanilha(this.files[0])">
+            <div class="upload-status" id="upload-status"></div>
+        </div>
+
+        <!-- RESUMO -->
+        <div class="resumo-grid" id="resumo-grid" style="display:none">
+            <div class="resumo-card">
+                <div class="valor" id="res-total">0</div>
+                <div class="label">Total Viaturas</div>
+            </div>
+            <div class="resumo-card danger">
+                <div class="valor" id="res-revisao">0</div>
+                <div class="label">⛔ Revisão Urgente</div>
+            </div>
+            <div class="resumo-card warning">
+                <div class="valor" id="res-atencao">0</div>
+                <div class="label">⚠️ Atenção</div>
+            </div>
+            <div class="resumo-card success">
+                <div class="valor" id="res-ok">0</div>
+                <div class="label">✅ Em Dia</div>
+            </div>
+        </div>
+
+        <!-- AÇÕES + BUSCA -->
+        <div class="actions-bar" id="actions-bar" style="display:none">
+            <div class="search-box">
+                <span class="material-icons">search</span>
+                <input type="text" id="busca" placeholder="Buscar por prefixo, placa ou unidade..." oninput="filtrarTabela()">
+            </div>
+            <select class="btn btn-outline" id="filtro-status" onchange="filtrarTabela()" style="padding:8px 14px;cursor:pointer">
+                <option value="">Todos os status</option>
+                <option value="revisao">⛔ Revisão Urgente</option>
+                <option value="atencao">⚠️ Atenção</option>
+                <option value="ok">✅ Em Dia</option>
+            </select>
+            <button class="btn btn-destaque" onclick="exportarRelatorio()">
+                <span class="material-icons" style="font-size:1rem">download</span> Exportar
+            </button>
+            <button class="btn" style="background:var(--cor-primaria);color:white;display:flex;align-items:center;gap:6px" onclick="abrirModalManual()">
+                <span class="material-icons" style="font-size:1rem">add_circle</span> Nova Manutenção
+            </button>
+        </div>
+
+        <!-- TABELA -->
+        <div class="table-card" id="table-card" style="display:none">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Prefixo</th>
+                        <th>Placa</th>
+                        <th>Unidade</th>
+                        <th>Locadora / Tipo</th>
+                        <th>KM Atual</th>
+                        <th>Últ. Revisão</th>
+                        <th>Próx. Revisão</th>
+                        <th>Situação KM</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-manutencao"></tbody>
+            </table>
+        </div>
+
+        <div class="empty-state" id="empty-state">
+            <span class="material-icons">build_circle</span>
+            <p>Importe uma planilha acima para visualizar o controle de manutenção.</p>
+        </div>
+    </main>
+</div>
+
+<!-- MODAL — INSERÇÃO MANUAL DE MANUTENÇÃO -->
+<div class="modal-overlay" id="modal-manual">
+    <div class="modal-box" style="max-width:640px">
+        <div class="modal-header">
+            <h3>➕ Nova Manutenção Manual</h3>
+            <button class="close-btn" onclick="fecharModal('modal-manual')">✕</button>
+        </div>
+        <div class="modal-body">
+
+            <!-- Aviso -->
+            <p style="font-size:.8rem;color:#888;margin-bottom:16px">
+                Insira os dados de manutenção de uma viatura. Digite o prefixo ou placa — os dados serão preenchidos automaticamente se a viatura já estiver cadastrada.
+            </p>
+
+            <!-- Linha 1: Prefixo + Placa -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+                <div>
+                    <label class="form-label">Prefixo</label>
+                    <input type="text" id="mm-prefixo" placeholder="Ex: 10 BPM 30-1303"
+                        class="form-input" oninput="buscarViaturaManual()">
+                </div>
+                <div>
+                    <label class="form-label">Placa</label>
+                    <input type="text" id="mm-placa" placeholder="Ex: QWL9G74"
+                        class="form-input" oninput="buscarViaturaManual()">
+                </div>
+            </div>
+
+            <!-- Feedback busca viatura -->
+            <div id="mm-viatura-info" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:.82rem;color:#166534">
+                <span class="material-icons" style="font-size:.9rem;vertical-align:middle;margin-right:4px">check_circle</span>
+                <span id="mm-viatura-texto"></span>
+            </div>
+            <div id="mm-viatura-nova" style="display:none;background:#fffbea;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:.82rem;color:#92400e">
+                <span class="material-icons" style="font-size:.9rem;vertical-align:middle;margin-right:4px">info</span>
+                Viatura não encontrada. Um novo cadastro será criado ao salvar.
+            </div>
+
+            <!-- Linha 2: Modelo + Marca + Unidade -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+                <div>
+                    <label class="form-label">Modelo</label>
+                    <input type="text" id="mm-modelo" placeholder="Ex: Hilux" class="form-input">
+                </div>
+                <div>
+                    <label class="form-label">Marca</label>
+                    <input type="text" id="mm-marca" placeholder="Ex: Toyota" class="form-input">
+                </div>
+                <div>
+                    <label class="form-label">Unidade</label>
+                    <input type="text" id="mm-unidade" placeholder="Ex: 10 BPM" class="form-input">
+                </div>
+            </div>
+
+            <!-- Linha 3: Data + Tipo + KM Atual -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+                <div>
+                    <label class="form-label">Data da Manutenção *</label>
+                    <input type="date" id="mm-data" class="form-input">
+                </div>
+                <div>
+                    <label class="form-label">Tipo *</label>
+                    <select id="mm-tipo" class="form-input">
+                        <option value="">Selecione...</option>
+                        <option value="Revisão Periódica">Revisão Periódica</option>
+                        <option value="Troca de Óleo">Troca de Óleo</option>
+                        <option value="Pneus">Pneus</option>
+                        <option value="Freios">Freios</option>
+                        <option value="Elétrica">Elétrica</option>
+                        <option value="Funilaria">Funilaria</option>
+                        <option value="Mecânica Geral">Mecânica Geral</option>
+                        <option value="Preventiva">Preventiva</option>
+                        <option value="Corretiva">Corretiva</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">KM Atual *</label>
+                    <input type="number" id="mm-km" placeholder="0" min="0" class="form-input">
+                </div>
+            </div>
+
+            <!-- Linha 4: Descrição (full width) -->
+            <div style="margin-bottom:14px">
+                <label class="form-label">Descrição do Serviço *</label>
+                <input type="text" id="mm-descricao" placeholder="Ex: Troca de óleo + filtros, revisão dos 10.000 km..."
+                    class="form-input">
+            </div>
+
+            <!-- Linha 5: Próxima revisão + Oficina + Custo -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+                <div>
+                    <label class="form-label">Próxima Revisão (KM)</label>
+                    <input type="number" id="mm-proxima" placeholder="0" min="0" class="form-input">
+                </div>
+                <div>
+                    <label class="form-label">Oficina / Responsável</label>
+                    <input type="text" id="mm-oficina" placeholder="Ex: Mec. João" class="form-input">
+                </div>
+                <div>
+                    <label class="form-label">Custo (R$)</label>
+                    <input type="number" id="mm-custo" placeholder="0,00" min="0" step="0.01" class="form-input">
+                </div>
+            </div>
+
+            <!-- Linha 6: Status + Proprietário/Locadora -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+                <div>
+                    <label class="form-label">Status da Viatura</label>
+                    <select id="mm-status" class="form-input">
+                        <option value="Operacional">Operacional</option>
+                        <option value="Manutencao">Em Manutenção</option>
+                        <option value="Indisponivel">Indisponível</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Proprietário / Locadora</label>
+                    <select id="mm-proprietario" class="form-input">
+                        <option value="">Selecione...</option>
+                        <option value="PMAL">PMAL</option>
+                        <option value="STYLE">Locadora Style</option>
+                        <option value="LOCALIZA">Locadora Localiza</option>
+                        <option value="OK">Locadora OK</option>
+                        <option value="UNIDAS">Locadora UNIDAS</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Observações -->
+            <div style="margin-bottom:14px">
+                <label class="form-label">Observações</label>
+                <textarea id="mm-obs" rows="2" placeholder="Observações adicionais..."
+                    class="form-input" style="resize:vertical"></textarea>
+            </div>
+
+            <p id="mm-msg" style="font-size:.82rem;text-align:center;min-height:18px;padding:4px 0"></p>
+        </div>
+        <div class="modal-footer" style="padding:0 24px 24px;display:flex;gap:10px">
+            <button class="btn btn-outline" onclick="fecharModal('modal-manual')" style="padding:12px 22px">Cancelar</button>
+            <button class="btn btn-destaque" onclick="salvarManutencaoManual()" style="flex:1;padding:12px;font-weight:700">
+                <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">save</span>
+                Salvar Manutenção
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DOSSIÊ / REGISTRO -->
+<div class="modal-overlay" id="modal-dossie">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="modal-dossie-titulo">Dossiê da Viatura</h3>
+            <button class="close-btn" onclick="fecharModal('modal-dossie')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="dossie-tabs">
+                <div class="dossie-tab active" onclick="abaTab('info')">📋 Informações</div>
+                <div class="dossie-tab" onclick="abaTab('historico')">📜 Histórico Manutenção</div>
+                <div class="dossie-tab" onclick="abaTab('vistorias')">🛡️ Vistorias (Checklist)</div>
+                <div class="dossie-tab" onclick="abaTab('sinistros')">🚨 Sinistros</div>
+            </div>
+
+            <div class="dossie-panel active" id="panel-info">
+                <div class="info-grid" id="dossie-info-grid"></div>
+            </div>
+
+            <div class="dossie-panel" id="panel-historico">
+                <div id="historico-content">
+                    <p style="color:#999;font-size:.84rem">Nenhum registro encontrado.</p>
+                </div>
+            </div>
+
+            <div class="dossie-panel" id="panel-vistorias">
+                <div id="vistorias-content">
+                    <p style="color:#999;font-size:.84rem">Carregando vistorias...</p>
+                </div>
+            </div>
+
+            <div class="dossie-panel" id="panel-sinistros">
+                <div id="sinistros-content">
+                    <p style="color:#999;font-size:.84rem">Clique na aba "Sinistros" para carregar os registros.</p>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="fecharModal('modal-dossie')">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<script src="../js/manutencao.js"></script>
+</body>
+</html>

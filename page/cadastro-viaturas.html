@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Viaturas — 10º BPM</title>
+    <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="../css/cadastro-viaturas.css">
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="header-info-left">
+            <img class="brasao" src="/img/brasao.png" alt="Brasão 10º BPM">
+            <div class="cabecalhotexto">
+                <h1>Sistema de Controle de Frota</h1>
+                <h3>10º Batalhão de Polícia Militar</h3>
+            </div>
+        </div>
+
+        <div class="header-info-right">
+            <div class="relogio" id="relogio"></div>
+            <div class="exibirusuario" id="user-info"></div>
+        </div>
+    </header>
+
+    <section class="pagecomplete">
+
+        <!-- NAV LATERAL -->
+        <nav class="navegacao">
+        <a href="../index.html">
+            <img width="40" height="40" src="https://img.icons8.com/fluency-systems-regular/48/home--v1.png" alt="home">
+            <p>Home</p>
+        </a>
+        <a href="/page/cadastro-viaturas.html" class="active">
+            <img width="40" height="40" src="https://img.icons8.com/external-kiranshastry-solid-kiranshastry/64/external-police-car-law-and-crime-kiranshastry-solid-kiranshastry.png" alt="viaturas">
+            <p>Viaturas</p>
+        </a>
+        <a href="/page/cadastro-motoristas.html">
+            <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/user--v1.png" alt="motoristas">
+            <p>Motoristas</p>
+        </a>
+        <a href="/page/manutencao.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/maintenance.png" alt="manutencao">
+            <p>Manutenção</p>
+        </a>
+        <a href="/page/mapa_diario.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/map--v1.png" alt="mapa">
+            <p>Mapa Diário</p>
+        </a>
+        <a href="/page/check_vistorias.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios-filled/50/inspection.png" alt="vistorias">
+            <p>Vistorias</p>
+        </a>
+        <a href="/page/sinistros.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/car-accident.png" alt="sinistros">
+            <p>Sinistros</p>
+        </a>
+        <hr class="nav-separator">
+        <button onclick="logout()">
+            <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/exit.png" alt="Sair">
+            <p>Sair</p>
+        </button>
+    </nav>
+        <!-- MAIN -->
+        <main>
+            <div class="saudacao">
+                <h2>🚓 Cadastro de Viaturas</h2>
+                <p>Gerencie as viaturas da frota do 10º Batalhão.</p>
+            </div>
+
+            <!-- UPLOAD PLANILHA -->
+            <div class="upload-card">
+                <h3><span class="material-icons" style="color:var(--cor-destaque)">upload_file</span> Importar Planilha de Viaturas (.xls / .xlsx)</h3>
+                <div class="upload-zone" id="upload-zone-cad" onclick="document.getElementById('file-input-cad').click()">
+                    <span class="material-icons">table_chart</span>
+                    <p><strong>Clique aqui</strong> ou arraste o arquivo Excel<br>
+                    <span style="font-size:.75rem;color:#aaa">Aceita .xls, .xlsx — atualiza dados existentes e cadastra novas viaturas automaticamente</span></p>
+                </div>
+                <input type="file" id="file-input-cad" accept=".xls,.xlsx,.xlsm" style="display:none" onchange="processarPlanilhaCad(this.files[0])">
+                <div class="upload-status" id="upload-status-cad"></div>
+            </div>
+
+            <!-- BARRA DE AÇÕES -->
+            <div class="actions-bar">
+                <button class="btn-novo" onclick="abrirModalNovo()">
+                    <span class="material-icons" style="font-size:1.1rem">add</span>
+                    Nova Viatura
+                </button>
+                <select class="filtro-status" id="filtro-status" onchange="aplicarFiltros()">
+                    <option value="">Todos os status</option>
+                    <option value="Operacional">Operacional</option>
+                    <option value="Manutencao">Em Manutenção</option>
+                    <option value="Indisponivel">Indisponível</option>
+                    <option value="Patrulha">Em Patrulha</option>
+                </select>
+                <input class="busca-input" type="text" id="busca" placeholder="🔍 Buscar prefixo, placa, modelo..."
+                    oninput="aplicarFiltros()">
+                <span id="contador-registros"></span>
+            </div>
+
+            <!-- TABELA -->
+            <div class="tabela-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Prefixo</th>
+                            <th>Placa</th>
+                            <th>Marca</th>
+                            <th>Modelo</th>
+                            <th>Ano</th>
+                            <th>Tipo de Frota</th>
+                            <th>Proprietário/Locadora</th>
+                            <th>Cor</th>
+                            <th>Combustível</th>
+                            <th>Renavam</th>
+                            <th>Número Cartão</th>
+                            <th>Número Chassi</th>
+                            <th>KM Atual</th>
+                            <th>Status</th>
+                            <th>Observações</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-viaturas">
+                        <tr>
+                            <td colspan="8" style="text-align:center;padding:28px;color:#aaa">
+                                Carregando viaturas...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </section>
+
+    <footer>
+        <div>
+            <h4>Seção de Operações — P3 / 10º Batalhão de Polícia Militar</h4>
+        </div>
+    </footer>
+
+
+    <!-- ================================================================
+     MODAL — CADASTRO / EDIÇÃO
+================================================================ -->
+    <div class="modal-overlay" id="modal-viatura">
+        <div class="modal-box">
+
+            <div class="modal-header">
+                <h3 id="modal-titulo">🚓 Nova Viatura</h3>
+                <button class="modal-close" onclick="fecharModal()">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" id="v-id">
+
+                <!-- Linha 1: Prefixo + Placa -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="campo-obrigatorio">Prefixo</label>
+                        <input type="text" id="v-prefixo" placeholder="Ex: P-01, M-03, U-07">
+                    </div>
+                    <div class="form-group">
+                        <label class="campo-obrigatorio">Placa</label>
+                        <input type="text" id="v-placa" placeholder="ABC-1234" maxlength="8">
+                    </div>
+                </div>
+
+                <!-- Linha 2: Modelo + Marca + Ano -->
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label class="campo-obrigatorio">Modelo</label>
+                        <input type="text" id="v-modelo" placeholder="Ex: Hilux, Saveiro">
+                    </div>
+                    <div class="form-group">
+                        <label>Marca</label>
+                        <input type="text" id="v-marca" placeholder="Ex: Toyota, VW">
+                    </div>
+                    <div class="form-group">
+                        <label>Ano</label>
+                        <input type="number" id="v-ano" placeholder="2022" min="1990" max="2030">
+                    </div>
+                </div>
+
+                <!--TIPO, PROPRIETÁRIO E LOCADORA-->
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label class="campo-obrigatorio">Tipo de Frota</label>
+                        <select id="v-tipo">
+                            <option value="">Selecione...</option>
+                            <option value="Público">Próprio</option>
+                            <option value="Privado">Locado</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Proprietário/Locadora</label>
+                        <select name="prop_loc" id="v-proprietarioLocadora">
+                            <option value="">Selecione...</option>
+                            <option value="PMAL">PMAL</option>
+                            <option value="STYLE">Locadora Style</option>
+                            <option value="LOCALIZA">Locadora Localiza</option>
+                            <option value="OK">Locadora OK</option>
+                            <option value="UNIDAS">Locadora UNIDAS</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Número Chassi</label>
+                        <input type="text" id="v-chassi" placeholder="Ex: 123456789">
+                    </div>
+                </div>
+
+                <!-- Linha 3: Cor + Combustível -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Cor</label>
+                        <input type="text" id="v-cor" placeholder="Ex: Branca, Prata">
+                    </div>
+                    <div class="form-group">
+                        <label>Combustível</label>
+                        <select id="v-combustivel">
+                            <option value="">Selecione...</option>
+                            <option value="Gasolina">Gasolina</option>
+                            <option value="Etanol">Etanol</option>
+                            <option value="Flex">Flex</option>
+                            <option value="Diesel">Diesel</option>
+                            <option value="GNV">GNV</option>
+                            <option value="Eletrico">Elétrico</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Linha 4: KM Atual + Status -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>RENAVAM</label>
+                        <input type="text" id="v-renavam" placeholder="Ex: 1234567890">
+                    </div>
+                    <div class="form-group">
+                        <label>Número Cartão</label>
+                        <input type="text" id="v-cartao" placeholder="Ex: 123456789">
+                    </div>
+                </div>
+
+                <!-- Linha 4: KM Atual + Status -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>KM Atual (Hodômetro)</label>
+                        <input type="number" id="v-km" placeholder="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="campo-obrigatorio">Status</label>
+                        <select id="v-status">
+                            <option value="Operacional">Operacional</option>
+                            <option value="Manutencao">Em Manutenção</option>
+                            <option value="Indisponivel">Indisponível</option>
+                            <option value="Patrulha">Em Patrulha</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Observações -->
+                <div class="form-group">
+                    <label>Observações</label>
+                    <textarea id="v-obs" rows="3"
+                        placeholder="Informações adicionais, histórico de manutenção, etc..."></textarea>
+                </div>
+            </div>
+
+            <p class="msg-feedback" id="v-msg"></p>
+
+            <div class="modal-footer">
+                <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+                <button class="btn-salvar" onclick="salvarViatura()">Salvar Viatura</button>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- SCRIPTS -->
+<script src="../js/cadastro-viaturas.js"></script>
+
+</body>
+
+</html>

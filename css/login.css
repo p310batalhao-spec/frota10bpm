@@ -1,0 +1,255 @@
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --cor-primaria: #1a2744;
+            --cor-secundaria: #2e3f6e;
+            --cor-destaque: #c8a415;
+            --cor-danger: #dc3545;
+            --cor-success: #28a745;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-secundaria) 100%);
+        }
+
+        /* ── CARD PRINCIPAL ─── */
+        .login-card {
+            background: white;
+            border-radius: 16px;
+            padding: 44px 52px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, .4);
+            text-align: center;
+            animation: slideUp .4s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .brasao-login {
+            width: 88px;
+            height: auto;
+            margin-bottom: 14px;
+        }
+
+        .login-card h1 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--cor-primaria);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            line-height: 1.3;
+        }
+
+        .login-card h2 {
+            font-size: .78rem;
+            font-weight: 500;
+            color: var(--cor-secundaria);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+            margin-bottom: 30px;
+        }
+
+        .divider {
+            width: 48px;
+            height: 3px;
+            background: var(--cor-destaque);
+            margin: 10px auto 24px;
+            border-radius: 2px;
+        }
+
+        /* ── ABAS ─── */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 0;
+            font-size: .8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: #aaa;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: color .2s, border-color .2s;
+        }
+
+        .tab-btn.active {
+            color: var(--cor-primaria);
+            border-bottom-color: var(--cor-destaque);
+        }
+
+        /* ── PAINEL DE CONTEÚDO ─── */
+        .tab-painel {
+            display: none;
+        }
+
+        .tab-painel.active {
+            display: block;
+        }
+
+        /* ── FORMULÁRIO ─── */
+        .form-group {
+            text-align: left;
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: .78rem;
+            font-weight: 700;
+            color: var(--cor-primaria);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-bottom: 5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper .material-icons {
+            position: absolute;
+            left: 11px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.1rem;
+            color: #aaa;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 11px 14px 11px 36px;
+            border: 1.5px solid #ddd;
+            border-radius: 10px;
+            font-size: .92rem;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+            color: var(--cor-primaria);
+            background: white;
+        }
+
+        .form-group select {
+            padding-left: 36px;
+            cursor: pointer;
+            appearance: none;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--cor-destaque);
+            box-shadow: 0 0 0 3px rgba(200, 164, 21, .12);
+        }
+
+        /* Linha com 2 campos lado a lado */
+        .form-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        /* ── BOTÕES ─── */
+        .btn-primario {
+            width: 100%;
+            padding: 13px;
+            background: var(--cor-primaria);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: .95rem;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: background .2s, transform .1s;
+            margin-top: 4px;
+        }
+
+        .btn-primario:hover {
+            background: var(--cor-destaque);
+            color: var(--cor-primaria);
+        }
+
+        .btn-primario:active {
+            transform: scale(.98);
+        }
+
+        /* ── MENSAGENS ─── */
+        .msg-feedback {
+            font-size: .82rem;
+            margin-top: 12px;
+            min-height: 18px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .msg-erro {
+            color: var(--cor-danger);
+        }
+
+        .msg-ok {
+            color: var(--cor-success);
+        }
+
+        /* ── AVISO DE PERFIL ─── */
+        .aviso-perfil {
+            background: #fffbea;
+            border: 1px solid #f0d86a;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: .76rem;
+            color: #7a5c00;
+            text-align: left;
+            margin-bottom: 14px;
+            line-height: 1.4;
+        }
+
+        .aviso-perfil strong {
+            color: var(--cor-primaria);
+        }
+
+        /* ── RODAPÉ ─── */
+        .login-footer {
+            margin-top: 24px;
+            font-size: .72rem;
+            color: #aaa;
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 32px 24px;
+                margin: 16px;
+            }
+
+            .form-row-2 {
+                grid-template-columns: 1fr;
+            }
+        }

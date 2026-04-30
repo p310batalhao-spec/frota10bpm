@@ -1,0 +1,325 @@
+        /* CSS REESTRUTURADO E COERENTE */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --cor-primaria: #1a2744;
+            --cor-secundaria: #2e3f6e;
+            --cor-destaque: #c8a415;
+            --cor-fundo: #f0f2f5;
+            --cor-card: #ffffff;
+            --cor-texto: #1a2744;
+            --cor-success: #28a745;
+            --cor-danger: #dc3545;
+            --sombra: 0 4px 14px rgba(0, 0, 0, .12);
+            --radius: 12px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: var(--cor-fundo);
+            color: var(--cor-texto);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER & NAV (Restaurados) */
+        header {
+            background: var(--cor-primaria);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-left img {
+            height: 50px;
+        }
+
+        .header-title h1 {
+            font-size: 1.2rem;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .header-title p {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin: 0;
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        #user-info {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--cor-destaque);
+        }
+
+        #relogio {
+            font-size: 0.75rem;
+        }
+
+        nav {
+            background: var(--cor-secundaria);
+            padding: 10px 20px;
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: 0.3s;
+            white-space: nowrap;
+        }
+
+        nav a:hover,
+        nav a.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--cor-destaque);
+        }
+
+        /* CONTEÚDO PRINCIPAL */
+        main {
+            flex: 1;
+            padding: 30px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .form-card {
+            background: var(--cor-card);
+            padding: 25px;
+            border-radius: var(--radius);
+            box-shadow: var(--sombra);
+            margin-bottom: 30px;
+        }
+
+        .grid-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        select,
+        input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .btn-lancar {
+            background: var(--cor-primaria);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-lancar:hover {
+            background: var(--cor-primaria);
+            color: var(--cor-destaque);
+        }
+
+        /* TABELA */
+        .table-container {
+            background: var(--cor-card);
+            border-radius: var(--radius);
+            box-shadow: var(--sombra);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--cor-primaria);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .tag-guarnicao {
+            background: var(--cor-secundaria);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        footer {
+            background: var(--cor-primaria);
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 0.8rem;
+            margin-top: auto;
+        }
+
+        /* MENSAGENS FEEDBACK */
+        #msg-feedback {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            display: none;
+            z-index: 1001;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        @media print {
+
+            header {
+                background: var(--cor-primaria);
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 10px 20px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+                position: sticky;
+                top: 0;
+                z-index: 1000;
+            }
+
+            .header-left {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+            }
+
+            .header-left img {
+                height: 50px;
+            }
+
+            .header-title h1 {
+                font-size: 1.2rem;
+                margin: 0;
+                text-transform: uppercase;
+            }
+
+            .header-title p {
+                font-size: 0.8rem;
+                opacity: 0.8;
+                margin: 0;
+            }
+
+            .header-right {
+                text-align: right;
+            }
+
+            #user-info {
+                display: none
+            }
+
+            #relogio {
+                font-size: 0.75rem;
+            }
+
+            nav,
+            .form-card,
+            .btn-lancar,
+            footer,
+            #msg-feedback {
+                display: none !important;
+            }
+
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                border: none;
+                width: 100%;
+                max-width: 100%;
+                margin: 0px
+            }
+
+            table {
+               margin-top: 40px;
+                width: 100%;
+                border: 1px solid #000;
+            }
+
+            th {
+                border: 1px solid #000;
+                color: rgb(255, 255, 255) !important;
+            }
+
+
+            td {
+                border: 1px solid #000;
+                color: rgb(0, 0, 0) !important;
+            }
+
+            .tag-guarnicao {
+                color: black !important;
+                border: 1px solid #000;
+                background: none;
+            }
+        }
