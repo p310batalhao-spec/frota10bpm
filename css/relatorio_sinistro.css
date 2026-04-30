@@ -1,0 +1,299 @@
+        /* ── RESET + FONTE IGUAL AO WORD ── */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            color: #000;
+            background: #e0e0e0;
+        }
+
+        /* ── BARRA DE AÇÕES (só na tela, some na impressão) ── */
+        .print-bar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: #1a2744;
+            color: white;
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            z-index: 9999;
+            box-shadow: 0 2px 8px rgba(0,0,0,.3);
+        }
+        .print-bar h4 { font-size: .9rem; font-weight: 700; flex: 1; }
+        .btn-imprimir {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 20px;
+            background: #c8a415; color: #1a2744;
+            border: none; border-radius: 8px;
+            font-size: .88rem; font-weight: 700; cursor: pointer;
+        }
+        .btn-imprimir:hover { background: #e0b800; }
+        .btn-voltar {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 16px;
+            background: rgba(255,255,255,.15); color: white;
+            border: none; border-radius: 8px;
+            font-size: .85rem; cursor: pointer;
+        }
+        .btn-voltar:hover { background: rgba(255,255,255,.25); }
+        .material-icons { font-family: 'Material Icons'; font-size: 1.1rem; vertical-align: middle; }
+
+        /* ── PÁGINA A4 ── */
+        .pagina {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            margin: 56px auto 20px;
+            padding: 14mm 16mm 14mm 16mm;
+            box-shadow: 0 4px 20px rgba(0,0,0,.2);
+            position: relative;
+        }
+
+        /* ── CABEÇALHO DO DOCUMENTO ── */
+        .doc-cabecalho {
+            text-align: center;
+            margin-bottom: 6mm;
+            line-height: 1.45;
+        }
+        .doc-cabecalho p { font-size: 8pt; font-weight: 700; text-transform: uppercase; }
+        .doc-cabecalho .destaque { font-size: 9pt; }
+
+        /* ── TÍTULO PRINCIPAL ── */
+        .doc-titulo {
+            border: 1.5pt solid #000;
+            text-align: center;
+            padding: 5pt 8pt;
+            font-size: 11pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 0;
+        }
+
+        /* ── GRID DE CAMPOS DO DOCUMENTO ── */
+        .doc-linha {
+            display: flex;
+            border: 1pt solid #000;
+            border-top: none;
+        }
+        .doc-linha:first-of-type { border-top: 1pt solid #000; }
+
+        .doc-celula {
+            padding: 3pt 5pt;
+            font-size: 9pt;
+            border-right: 1pt solid #000;
+            min-height: 18pt;
+            display: flex;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 1pt 4pt;
+        }
+        .doc-celula:last-child { border-right: none; }
+
+        .doc-celula .label {
+            font-weight: 700;
+            font-size: 8pt;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .doc-celula .valor {
+            font-size: 9pt;
+            flex: 1;
+            min-width: 0;
+            word-break: break-word;
+        }
+
+        /* ── SEÇÃO TÍTULO (ex: 01 – UG, 03 – DADOS DO VEÍCULO) ── */
+        .sec-header {
+            border: 1pt solid #000;
+            border-top: none;
+            padding: 3pt 5pt;
+            font-size: 9pt;
+            font-weight: 700;
+            background: #f5f5f5;
+        }
+        .sec-header.top { border-top: 1pt solid #000; }
+
+        /* ── UG + SINISTRO (linha topo) ── */
+        .linha-ug {
+            display: flex;
+            border: 1pt solid #000;
+            border-top: none;
+        }
+        .linha-ug .celula-ug {
+            flex: 1;
+            padding: 3pt 5pt;
+            font-size: 9pt;
+            font-weight: 700;
+            border-right: 1pt solid #000;
+            min-height: 20pt;
+        }
+        .linha-ug .celula-sin {
+            width: 130pt;
+            padding: 3pt 5pt;
+            font-size: 9pt;
+            font-weight: 700;
+            min-height: 20pt;
+        }
+
+        /* ── TIPO DE SINISTRO: caixinhas de checkbox ── */
+        .tipos-row {
+            display: flex;
+            border: 1pt solid #000;
+            border-top: none;
+        }
+        .tipo-celula {
+            flex: 1;
+            padding: 3pt 4pt;
+            font-size: 8pt;
+            font-weight: 700;
+            border-right: 1pt solid #000;
+            text-align: center;
+        }
+        .tipo-celula:last-child { border-right: none; }
+        .tipo-celula .cb {
+            display: inline-block;
+            width: 10pt; height: 10pt;
+            border: 1pt solid #000;
+            vertical-align: middle;
+            margin-right: 2pt;
+            position: relative;
+            line-height: 10pt;
+            text-align: center;
+            font-size: 8pt;
+        }
+        .tipo-celula .cb.marcado { font-weight: 900; }
+
+        /* ── TABELA DANOS TERCEIROS ── */
+        .tabela-danos {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5pt;
+        }
+        .tabela-danos th, .tabela-danos td {
+            border: 1pt solid #000;
+            padding: 2.5pt 4pt;
+            text-align: left;
+            font-weight: normal;
+        }
+        .tabela-danos th { font-weight: 700; background: #f5f5f5; }
+        .tabela-danos td { min-height: 16pt; }
+
+        /* ── TABELA TESTEMUNHAS ── */
+        .tabela-test {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9pt;
+        }
+        .tabela-test th, .tabela-test td {
+            border: 1pt solid #000;
+            padding: 3pt 5pt;
+        }
+        .tabela-test th { font-weight: 700; background: #f5f5f5; text-align: left; }
+        .tabela-test td { min-height: 17pt; }
+        .tabela-test .col-nome { width: 70%; }
+        .tabela-test .col-fone { width: 30%; }
+
+        /* ── BLOCO DANOS + DESCRIÇÃO (lado a lado) ── */
+        .dois-col {
+            display: flex;
+            border: 1pt solid #000;
+            border-top: none;
+        }
+        .dois-col .col {
+            flex: 1;
+            border-right: 1pt solid #000;
+        }
+        .dois-col .col:last-child { border-right: none; }
+        .col-header {
+            padding: 3pt 5pt;
+            font-size: 8.5pt;
+            font-weight: 700;
+            background: #f5f5f5;
+            border-bottom: 1pt solid #000;
+        }
+        .col-body {
+            padding: 5pt 5pt;
+            font-size: 9pt;
+            min-height: 60pt;
+            line-height: 1.5;
+        }
+
+        /* ── RODAPÉ / ASSINATURAS ── */
+        .assinatura-row {
+            display: flex;
+            border: 1pt solid #000;
+            border-top: none;
+            min-height: 40pt;
+        }
+        .assinatura-celula {
+            flex: 1;
+            padding: 4pt 6pt;
+            font-size: 8.5pt;
+            border-right: 1pt solid #000;
+        }
+        .assinatura-celula:last-child { border-right: none; }
+        .assinatura-celula .ass-label { font-weight: 700; font-size: 8pt; }
+
+        /* ── PÁGINA 2 ── */
+        .p2-cabecalho {
+            text-align: center;
+            font-size: 10pt;
+            font-weight: 700;
+            margin-bottom: 4mm;
+            text-transform: uppercase;
+        }
+        .bloco-grande {
+            border: 1pt solid #000;
+            margin-bottom: 0;
+        }
+        .bloco-grande-header {
+            padding: 3pt 5pt;
+            font-size: 9pt;
+            font-weight: 700;
+            background: #f5f5f5;
+            border-bottom: 1pt solid #000;
+        }
+        .bloco-grande-body {
+            padding: 6pt 5pt;
+            font-size: 9pt;
+            min-height: 100mm;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        /* ── NÚMERO DE PÁGINA ── */
+        .num-pagina {
+            position: absolute;
+            bottom: 8mm;
+            right: 16mm;
+            font-size: 8pt;
+            color: #444;
+        }
+
+        /* ── LOADING ── */
+        #loading {
+            width: 210mm;
+            margin: 80px auto;
+            text-align: center;
+            font-size: 1rem;
+            color: #666;
+        }
+
+        /* ══════════════════════════════
+           IMPRESSÃO — remove tudo que
+           não é documento
+        ══════════════════════════════ */
+        @media print {
+            @page { size: A4; margin: 0; }
+            body   { background: white; }
+            .print-bar { display: none !important; }
+            .pagina {
+                margin: 0;
+                box-shadow: none;
+                padding: 14mm 16mm;
+                page-break-after: always;
+            }
+            .pagina:last-child { page-break-after: auto; }
+            #loading { display: none; }
+        }
