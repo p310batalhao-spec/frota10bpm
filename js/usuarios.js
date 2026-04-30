@@ -104,7 +104,7 @@
         document.getElementById('stat-total').textContent   = lista.length;
         document.getElementById('stat-admin').textContent   = lista.filter(u => u.perfil === 'ADMIN').length;
         document.getElementById('stat-usuario').textContent = lista.filter(u => u.perfil === 'USUARIO').length;
-        document.getElementById('stat-pend').textContent    = lista.filter(u => !u.perfil || u.perfil === 'PENDENTE').length;
+        document.getElementById('stat-pend').textContent    = lista.filter(u => !u.perfil || u.perfil === 'PENDENTE' || u.aprovado === false).length;
     }
 
     // ================================================================
@@ -128,8 +128,9 @@
             const mat    = (u.matricula || '').toLowerCase();
             const secao  = (u.secao || '').toLowerCase();
             const cpf    = (u.cpf || '').toLowerCase();
-            const perfil = u.perfil || 'PENDENTE';
-            const okTexto  = !txtFiltro || nome.includes(txtFiltro) || mat.includes(txtFiltro) || secao.includes(txtFiltro) || cpf.includes(txtFiltro);
+            const perfil = (!u.perfil || u.perfil === 'PENDENTE' || u.aprovado === false) ? 'PENDENTE' : u.perfil;
+            const nomeComp = (u.nomeCompleto || '').toLowerCase();
+            const okTexto  = !txtFiltro || nome.includes(txtFiltro) || nomeComp.includes(txtFiltro) || mat.includes(txtFiltro) || secao.includes(txtFiltro) || cpf.includes(txtFiltro);
             const okPerfil = !filtroPerfil || perfil === filtroPerfil;
             return okTexto && okPerfil;
         });
@@ -157,7 +158,7 @@
     // HTML DE UM CARD
     // ================================================================
     function criarCardHTML(id, u) {
-        const perfil   = u.perfil || 'PENDENTE';
+        const perfil   = (!u.perfil || u.perfil === 'PENDENTE' || u.aprovado === false) ? 'PENDENTE' : u.perfil;
         const isPend   = perfil === 'PENDENTE';
         const nome     = u.usuario || 'Sem nome';
         const initials = nome.slice(0, 2).toUpperCase();
@@ -278,8 +279,8 @@
         msgEl.style.color = '#dc3545';
         msgEl.textContent = '';
 
-        if (!usuario || !nomeCompleto || !matricula || !cpf) {
-            msgEl.textContent = '⚠️ Preencha Nome de Guerra, Nome Completo, Matrícula e CPF.'; return;
+        if (!usuario || !matricula || !cpf) {
+            msgEl.textContent = '⚠️ Preencha Nome de Guerra, Matrícula e CPF.'; return;
         }
         if (!_editandoKey && !senha) {
             msgEl.textContent = '⚠️ Defina uma senha para o novo usuário.'; return;

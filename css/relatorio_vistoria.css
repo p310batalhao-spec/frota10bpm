@@ -356,7 +356,7 @@
         @media print {
             header, .navegacao, footer, .rel-footer, .actions-bar,
             .tabela-wrapper, .page-header, .btn-relatorio, .btn-deletar,
-            .modal-overlay { display: none !important; }
+            .modal-overlay, .rel-close-btn { display: none !important; }
             body { background: white; }
             .modal-overlay.open { display: block !important; position: static !important; background: none !important; padding: 0 !important; }
             .modal-relatorio { box-shadow: none; max-height: none; animation: none; }
