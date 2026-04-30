@@ -1,4 +1,4 @@
-    // ================================================================
+// ================================================================
     // FIREBASE REST
     // ================================================================
     const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
@@ -180,7 +180,9 @@
             </button>`;
 
         return `
-        <div class="card-usuario perfil-${perfil} ${isPend ? 'pendente' : ''}">
+        <div class="card-usuario perfil-${perfil} ${isPend ? 'pendente' : ''}"
+             onclick="event.stopPropagation()"
+             onmousedown="event.stopPropagation()">
             <div class="card-top">
                 <div class="card-avatar ${avatarCls}">${initials}</div>
                 <div class="card-info">
@@ -383,24 +385,47 @@
             msgEl.textContent = '⚠️ Selecione um perfil antes de confirmar.';
             return;
         }
+        if (!_aprovandoKey) {
+            msgEl.style.color = '#dc3545';
+            msgEl.textContent = '⚠️ Nenhum usuário selecionado para aprovação.';
+            return;
+        }
+
+        const btn = document.getElementById('btn-confirmar-aprovacao');
+        btn.disabled = true;
         msgEl.style.color = '#155724';
         msgEl.textContent = 'Aprovando...';
+
         try {
-            await fb_patch('usuarios', _aprovandoKey, {
-                perfil: _perfilSelecionado,
-                aprovado: true,
-                aprovadoEm: new Date().toISOString(),
-                aprovadoPor: localStorage.getItem('frota_usuario') || 'Sistema'
-            });
-            _usuariosCache[_aprovandoKey].perfil   = _perfilSelecionado;
-            _usuariosCache[_aprovandoKey].aprovado = true;
-            msgEl.textContent = '✅ Acesso aprovado com perfil ' + _perfilSelecionado + '!';
+            // Usa PUT com o objeto completo do usuário para garantir compatibilidade
+            // (PATCH do Firebase pode ignorar campos em algumas configurações de regras)
+            const usuarioAtual = { ..._usuariosCache[_aprovandoKey] };
+            usuarioAtual.perfil     = _perfilSelecionado;
+            usuarioAtual.aprovado   = true;
+            usuarioAtual.aprovadoEm  = new Date().toISOString();
+            usuarioAtual.aprovadoPor = localStorage.getItem('frota_usuario') || 'Sistema';
+
+            const resposta = await fb_put('usuarios', _aprovandoKey, usuarioAtual);
+
+            // Firebase PUT retorna o objeto salvo — verifica se foi bem-sucedido
+            if (!resposta || resposta.error) {
+                throw new Error(resposta?.error || 'Resposta inválida do Firebase');
+            }
+
+            // Atualiza cache local
+            _usuariosCache[_aprovandoKey] = usuarioAtual;
+
+            msgEl.textContent = `✅ ${_perfilSelecionado === 'ADMIN' ? '🛡️' : '👤'} Acesso aprovado como ${_perfilSelecionado}!`;
             atualizarStats();
             renderizarCards();
-            setTimeout(fecharModalAprovacao, 1400);
+            setTimeout(fecharModalAprovacao, 1600);
+
         } catch (e) {
+            console.error('Erro ao aprovar:', e);
             msgEl.style.color = '#dc3545';
-            msgEl.textContent = 'Erro ao aprovar. Verifique a conexão.';
+            msgEl.textContent = 'Erro ao aprovar: ' + (e.message || 'verifique a conexão.');
+        } finally {
+            btn.disabled = false;
         }
     }
 
@@ -441,21 +466,6 @@
     }
 
     // ================================================================
-    // FECHAR MODAIS CLICANDO FORA
-    // ================================================================
-    document.getElementById('modal-usuario').addEventListener('click', function(e) {
-        if (e.target === this) fecharModal();
-    });
-    document.getElementById('modal-aprovacao').addEventListener('click', function(e) {
-        if (e.target === this) fecharModalAprovacao();
-    });
-
-    // Impede que cliques dentro do modal-box propaguem para o overlay
-    document.querySelectorAll('.modal-box, .modal-box.modal-aprovacao').forEach(box => {
-        box.addEventListener('click', function(e) { e.stopPropagation(); });
-    });
-
-    // ================================================================
     // INICIALIZAÇÃO
     // ================================================================
     document.addEventListener('DOMContentLoaded', () => {
@@ -463,4 +473,20 @@
         atualizarRelogio();
         setInterval(atualizarRelogio, 1000);
         carregarUsuarios();
+
+        // ── Fechar modais ao clicar NO OVERLAY (fundo escuro) ──
+        // Usa 'mousedown' em vez de 'click' para não colidir com
+        // eventos dos botões internos que usam 'click'.
+        document.getElementById('modal-usuario').addEventListener('mousedown', function(e) {
+            if (e.target === this) fecharModal();
+        });
+        document.getElementById('modal-aprovacao').addEventListener('mousedown', function(e) {
+            if (e.target === this) fecharModalAprovacao();
+        });
+
+        // ── Impede propagação de cliques dentro das caixas dos modais ──
+        document.querySelectorAll('.modal-box').forEach(box => {
+            box.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+            box.addEventListener('click',     function(e) { e.stopPropagation(); });
+        });
     });
