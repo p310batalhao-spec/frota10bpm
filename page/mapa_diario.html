@@ -9,6 +9,27 @@
     <link rel="stylesheet" href="../css/stylesindex.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="../css/mapa-diario.css">
+    <style>
+        /* ── IMPRESSÃO ─────────────────────────── */
+        @media print {
+            .no-print { display: none !important; }
+            .print-titulo-mapa {
+                display: block !important;
+                text-align: center;
+                font-size: 1.15rem;
+                font-weight: bold;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                margin: 16px 0 12px 0;
+                color: #000;
+                border-bottom: 2px solid #000;
+                padding-bottom: 8px;
+            }
+            nav, .form-card, .btn-lancar, footer, #msg-feedback,
+            [style*="justify-content: flex-end"] { display: none !important; }
+        }
+        .print-titulo-mapa { display: none; }
+    </style>
 </head>
 
 <body>
@@ -147,6 +168,9 @@
                 </div>
             </div>
 
+            <!-- Título visível apenas na impressão -->
+            <div class="print-titulo-mapa">Mapa Diário de Distribuição de Viaturas</div>
+
             <div class="table-container">
                 <table>
                     <thead>
@@ -157,7 +181,7 @@
                             <th>Lançado em</th>
                             <th>Data p/ Vistoria</th>
                             <th>Responsável</th>
-                            <th>Ações</th>
+                            <th class="no-print">Ações</th>
                         </tr>
                     </thead>
                     <tbody id="tabela-mapa">

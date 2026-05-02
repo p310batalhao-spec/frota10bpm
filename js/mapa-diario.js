@@ -1,4 +1,4 @@
-        const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
+const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
         let viaturasCache = {};
 
         function hojeISO() {
@@ -222,3 +222,11 @@
             </tr>`; 
             });
         }
+
+        // Garante ocultação da coluna Ações na impressão
+        window.addEventListener('beforeprint', function() {
+            document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
+        });
+        window.addEventListener('afterprint', function() {
+            document.querySelectorAll('.no-print').forEach(el => el.style.display = '');
+        });
