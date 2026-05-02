@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logs do Sistema — 10º BPM</title>
+    <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/stylesindex.css">
+    <style>
+        :root {
+            --azul:      #1a2744;
+            --azul2:     #2e3f6e;
+            --ouro:      #c8a415;
+            --verde:     #28a745;
+            --vermelho:  #dc3545;
+            --cinza:     #6c757d;
+            --fundo:     #0d1117;
+            --card:      #161b22;
+            --borda:     #30363d;
+            --texto:     #e6edf3;
+            --texto2:    #8b949e;
+            --mono:      'JetBrains Mono', monospace;
+            --sans:      'Barlow', sans-serif;
+            --cond:      'Barlow Condensed', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--sans);
+            background: var(--fundo);
+            color: var(--texto);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── HEADER ── */
+        header {
+            background: var(--azul);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.4);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .header-info-left { display: flex; align-items: center; gap: 15px; }
+        .header-info-left .brasao { height: 50px; }
+        .cabecalhotexto h1 { font-size: 1.1rem; font-family: var(--cond); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .cabecalhotexto h3 { font-size: .75rem; opacity: .75; font-weight: 400; }
+        .header-info-right { text-align: right; }
+        #user-info { font-size: .82rem; font-weight: 700; color: var(--ouro); }
+        #relogio { font-size: .7rem; opacity: .7; }
+
+        /* ── LAYOUT ── */
+        .pagecomplete { display: flex; flex: 1; overflow: hidden; }
+
+        /* ── NAV LATERAL ── */
+        .navegacao {
+            width: 80px;
+            min-height: 100%;
+            background: var(--azul2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 18px 0;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .navegacao a, .navegacao button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            color: rgba(255,255,255,.7);
+            text-decoration: none;
+            font-size: .6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            padding: 8px 4px;
+            border-radius: 8px;
+            width: 68px;
+            transition: .2s;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .navegacao a:hover, .navegacao button:hover { background: rgba(255,255,255,.12); color: var(--ouro); }
+        .navegacao a.active { background: rgba(200,164,21,.18); color: var(--ouro); }
+        .navegacao a img, .navegacao button img { filter: invert(1) opacity(.7); transition: .2s; }
+        .navegacao a:hover img, .navegacao button:hover img,
+        .navegacao a.active img { filter: invert(1) opacity(1); }
+        .nav-separator { width: 40px; border: none; border-top: 1px solid rgba(255,255,255,.15); margin: 6px 0; }
+
+        /* ── MAIN ── */
+        main {
+            flex: 1;
+            padding: 24px 28px;
+            overflow-y: auto;
+            max-width: 1400px;
+        }
+
+        /* ── PAGE HEADER ── */
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .page-header-left h2 {
+            font-family: var(--cond);
+            font-size: 1.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--texto);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .page-header-left h2 .material-icons { color: var(--ouro); font-size: 1.8rem; }
+        .page-header-left p { font-size: .82rem; color: var(--texto2); margin-top: 4px; }
+
+        /* ── STATS ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--borda);
+            border-radius: 10px;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+            transition: border-color .2s, background .2s;
+        }
+        .stat-card:hover { border-color: var(--ouro); background: rgba(200,164,21,.06); }
+        .stat-card.active { border-color: var(--ouro); background: rgba(200,164,21,.1); }
+        .stat-card .stat-num { font-family: var(--mono); font-size: 1.6rem; font-weight: 600; }
+        .stat-card .stat-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .5px; color: var(--texto2); }
+        .stat-card .stat-icon { font-size: 1rem; margin-bottom: 4px; }
+
+        /* ── FILTROS ── */
+        .filtros-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+        .filtro-input, .filtro-select {
+            background: var(--card);
+            border: 1px solid var(--borda);
+            border-radius: 8px;
+            color: var(--texto);
+            padding: 8px 12px;
+            font-size: .83rem;
+            font-family: var(--sans);
+            outline: none;
+            transition: border-color .2s;
+        }
+        .filtro-input { flex: 1; min-width: 220px; }
+        .filtro-input:focus, .filtro-select:focus { border-color: var(--ouro); }
+        .filtro-select option { background: #1a1f2e; }
+        .btn-limpar {
+            background: none;
+            border: 1px solid var(--borda);
+            border-radius: 8px;
+            color: var(--texto2);
+            padding: 8px 14px;
+            font-size: .8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: .2s;
+            white-space: nowrap;
+        }
+        .btn-limpar:hover { border-color: var(--ouro); color: var(--ouro); }
+        .btn-exportar {
+            background: var(--azul2);
+            border: 1px solid var(--borda);
+            border-radius: 8px;
+            color: white;
+            padding: 8px 14px;
+            font-size: .8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: .2s;
+            white-space: nowrap;
+        }
+        .btn-exportar:hover { background: var(--ouro); color: var(--azul); }
+
+        /* ── CONTADOR ── */
+        .log-count {
+            font-size: .76rem;
+            color: var(--texto2);
+            margin-bottom: 10px;
+            font-family: var(--mono);
+        }
+
+        /* ── LOG ENTRIES ── */
+        .log-lista { display: flex; flex-direction: column; gap: 4px; }
+
+        .log-entry {
+            background: var(--card);
+            border: 1px solid var(--borda);
+            border-left: 3px solid transparent;
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: grid;
+            grid-template-columns: 140px 90px 110px 1fr auto;
+            align-items: center;
+            gap: 12px;
+            font-size: .8rem;
+            transition: background .15s, border-left-color .15s;
+            cursor: default;
+        }
+        .log-entry:hover { background: #1c2333; border-left-color: var(--ouro); }
+
+        .log-ts {
+            font-family: var(--mono);
+            font-size: .72rem;
+            color: var(--texto2);
+            white-space: nowrap;
+        }
+
+        .log-badge {
+            font-size: .65rem;
+            font-weight: 700;
+            font-family: var(--cond);
+            letter-spacing: .5px;
+            padding: 3px 8px;
+            border-radius: 5px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            text-align: center;
+        }
+        .badge-criar    { background: rgba(40,167,69,.18);  color: #4cc36e; border: 1px solid rgba(40,167,69,.3); }
+        .badge-editar   { background: rgba(200,164,21,.18); color: #e8c04a; border: 1px solid rgba(200,164,21,.3); }
+        .badge-excluir  { background: rgba(220,53,69,.18);  color: #f07080; border: 1px solid rgba(220,53,69,.3); }
+        .badge-aprovar  { background: rgba(13,202,240,.18); color: #5dd5f0; border: 1px solid rgba(13,202,240,.3); }
+        .badge-revogar  { background: rgba(255,165,0,.18);  color: #ffb347; border: 1px solid rgba(255,165,0,.3); }
+        .badge-vistoria { background: rgba(111,66,193,.18); color: #c084fc; border: 1px solid rgba(111,66,193,.3); }
+        .badge-relatorio{ background: rgba(108,117,125,.18);color: #a8b1bb; border: 1px solid rgba(108,117,125,.3); }
+        .badge-importar { background: rgba(23,162,184,.18); color: #56d4e4; border: 1px solid rgba(23,162,184,.3); }
+        .badge-login    { background: rgba(40,167,69,.1);   color: #6ed99a; border: 1px solid rgba(40,167,69,.2); }
+        .badge-mapa     { background: rgba(255,193,7,.18);  color: #ffd54f; border: 1px solid rgba(255,193,7,.3); }
+
+        .log-modulo {
+            font-size: .68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            color: var(--texto2);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .log-desc {
+            font-size: .8rem;
+            color: var(--texto);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .log-desc strong { color: var(--ouro); }
+
+        .log-user {
+            font-family: var(--mono);
+            font-size: .68rem;
+            color: var(--texto2);
+            white-space: nowrap;
+            text-align: right;
+        }
+
+        /* ── VAZIO / LOADING ── */
+        .estado-vazio {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--texto2);
+        }
+        .estado-vazio .material-icons { font-size: 3rem; display: block; margin-bottom: 12px; opacity: .4; }
+        .estado-vazio p { font-size: .9rem; }
+
+        /* ── LOAD MORE ── */
+        .btn-load-more {
+            display: block;
+            width: 100%;
+            margin-top: 14px;
+            padding: 12px;
+            background: var(--card);
+            border: 1px dashed var(--borda);
+            border-radius: 8px;
+            color: var(--texto2);
+            font-size: .82rem;
+            cursor: pointer;
+            transition: .2s;
+            font-family: var(--sans);
+        }
+        .btn-load-more:hover { border-color: var(--ouro); color: var(--ouro); }
+
+        /* ── MODAL DETALHE ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: #1c2333;
+            border: 1px solid var(--borda);
+            border-radius: 14px;
+            max-width: 560px;
+            width: 100%;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0,0,0,.6);
+            animation: mIn .22s ease;
+        }
+        @keyframes mIn { from { opacity:0; transform:translateY(16px) scale(.97) } to { opacity:1; transform:none } }
+        .modal-head {
+            background: var(--azul);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-head h3 { font-family: var(--cond); font-size: 1rem; font-weight: 700; color: white; display: flex; align-items: center; gap: 8px; }
+        .modal-head button { background: none; border: none; color: rgba(255,255,255,.6); cursor: pointer; font-size: 1.3rem; line-height: 1; }
+        .modal-body { padding: 20px; }
+        .detalhe-row {
+            display: flex;
+            gap: 12px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--borda);
+            align-items: flex-start;
+        }
+        .detalhe-row:last-child { border-bottom: none; }
+        .detalhe-key {
+            font-family: var(--mono);
+            font-size: .68rem;
+            color: var(--texto2);
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            min-width: 110px;
+            padding-top: 1px;
+        }
+        .detalhe-val {
+            font-size: .82rem;
+            color: var(--texto);
+            word-break: break-word;
+            flex: 1;
+        }
+        .detalhe-val pre {
+            background: var(--fundo);
+            border-radius: 6px;
+            padding: 10px;
+            font-family: var(--mono);
+            font-size: .7rem;
+            overflow-x: auto;
+            color: #7ee787;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+        }
+
+        footer {
+            background: var(--azul);
+            color: rgba(255,255,255,.5);
+            text-align: center;
+            padding: 12px;
+            font-size: .75rem;
+        }
+
+        @media (max-width: 900px) {
+            .log-entry { grid-template-columns: 1fr 1fr; }
+            .log-ts, .log-modulo, .log-user { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-info-left">
+        <img class="brasao" src="../img/brasao.png" alt="Brasão 10º BPM">
+        <div class="cabecalhotexto">
+            <h1>Sistema de Controle de Frota</h1>
+            <h3>10º Batalhão de Polícia Militar</h3>
+        </div>
+    </div>
+    <div class="header-info-right">
+        <div class="relogio" id="relogio"></div>
+        <div class="exibirusuario" id="user-info"></div>
+    </div>
+</header>
+
+<section class="pagecomplete">
+    <nav class="navegacao">
+        <a href="../index.html">
+            <img width="40" height="40" src="https://img.icons8.com/fluency-systems-regular/48/home--v1.png" alt="home">
+            <p>Home</p>
+        </a>
+        <a href="../page/cadastro-viaturas.html">
+            <img width="40" height="40" src="https://img.icons8.com/external-kiranshastry-solid-kiranshastry/64/external-police-car-law-and-crime-kiranshastry-solid-kiranshastry.png" alt="viaturas">
+            <p>Viaturas</p>
+        </a>
+        <a href="../page/cadastro-motoristas.html">
+            <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/user--v1.png" alt="motoristas">
+            <p>Motoristas</p>
+        </a>
+        <a href="../page/manutencao.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/maintenance.png" alt="manutencao">
+            <p>Manutenção</p>
+        </a>
+        <a href="../page/mapa_diario.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/map--v1.png" alt="mapa">
+            <p>Mapa Diário</p>
+        </a>
+        <a href="../page/check_vistorias.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios-filled/50/inspection.png" alt="vistorias">
+            <p>Vistorias</p>
+        </a>
+        <a href="../page/sinistros.html">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/car-accident.png" alt="sinistros">
+            <p>Sinistros</p>
+        </a>
+        <a href="../page/usuarios.html">
+            <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/manage-accounts.png" alt="usuarios">
+            <p>Usuários</p>
+        </a>
+        <a href="../page/logs.html" class="active">
+            <img width="40" height="40" src="https://img.icons8.com/ios/50/activity-log.png" alt="logs">
+            <p>Logs</p>
+        </a>
+        <hr class="nav-separator">
+        <button onclick="logout()">
+            <img width="40" height="40" src="https://img.icons8.com/material-outlined/48/exit.png" alt="Sair">
+            <p>Sair</p>
+        </button>
+    </nav>
+
+    <main>
+        <div class="page-header">
+            <div class="page-header-left">
+                <h2>
+                    <span class="material-icons">manage_search</span>
+                    Logs do Sistema
+                </h2>
+                <p>Histórico completo de todas as ações realizadas no sistema de frota</p>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <button class="btn-exportar" onclick="exportarCSV()">
+                    <span class="material-icons" style="font-size:1rem">download</span>
+                    Exportar CSV
+                </button>
+                <button class="btn-limpar" onclick="limparFiltros()">
+                    <span class="material-icons" style="font-size:1rem">filter_alt_off</span>
+                    Limpar filtros
+                </button>
+            </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card" onclick="filtrarAcao('')" id="stat-todos">
+                <div class="stat-icon">📋</div>
+                <div class="stat-num" id="sn-total">—</div>
+                <div class="stat-label">Total de registros</div>
+            </div>
+            <div class="stat-card" onclick="filtrarAcao('criar')" id="stat-criar">
+                <div class="stat-icon">✅</div>
+                <div class="stat-num" id="sn-criar">—</div>
+                <div class="stat-label">Cadastros</div>
+            </div>
+            <div class="stat-card" onclick="filtrarAcao('editar')" id="stat-editar">
+                <div class="stat-icon">✏️</div>
+                <div class="stat-num" id="sn-editar">—</div>
+                <div class="stat-label">Edições</div>
+            </div>
+            <div class="stat-card" onclick="filtrarAcao('excluir')" id="stat-excluir">
+                <div class="stat-icon">🗑️</div>
+                <div class="stat-num" id="sn-excluir">—</div>
+                <div class="stat-label">Exclusões</div>
+            </div>
+            <div class="stat-card" onclick="filtrarAcao('vistoria')" id="stat-vistoria">
+                <div class="stat-icon">🔍</div>
+                <div class="stat-num" id="sn-vistoria">—</div>
+                <div class="stat-label">Vistorias</div>
+            </div>
+            <div class="stat-card" onclick="filtrarAcao('relatorio')" id="stat-relatorio">
+                <div class="stat-icon">📄</div>
+                <div class="stat-num" id="sn-relatorio">—</div>
+                <div class="stat-label">Relatórios</div>
+            </div>
+            <div class="stat-card" onclick="filtrarAcao('importar')" id="stat-importar">
+                <div class="stat-icon">📥</div>
+                <div class="stat-num" id="sn-importar">—</div>
+                <div class="stat-label">Importações</div>
+            </div>
+        </div>
+
+        <!-- FILTROS -->
+        <div class="filtros-bar">
+            <input class="filtro-input" type="text" id="f-busca"
+                placeholder="🔍 Buscar por usuário, descrição, módulo..." oninput="renderLogs()">
+            <select class="filtro-select" id="f-modulo" onchange="renderLogs()">
+                <option value="">Todos os módulos</option>
+                <option value="Usuários">Usuários</option>
+                <option value="Motoristas">Motoristas</option>
+                <option value="Viaturas">Viaturas</option>
+                <option value="Mapa Diário">Mapa Diário</option>
+                <option value="Vistoria">Vistoria</option>
+                <option value="Relatório">Relatório</option>
+                <option value="Manutenção">Manutenção</option>
+                <option value="Sinistros">Sinistros</option>
+            </select>
+            <select class="filtro-select" id="f-acao" onchange="renderLogs()">
+                <option value="">Todas as ações</option>
+                <option value="criar">Cadastrar</option>
+                <option value="editar">Editar</option>
+                <option value="excluir">Excluir</option>
+                <option value="aprovar">Aprovar</option>
+                <option value="revogar">Revogar</option>
+                <option value="vistoria">Vistoria</option>
+                <option value="relatorio">Relatório</option>
+                <option value="importar">Importar</option>
+                <option value="mapa">Mapa</option>
+            </select>
+            <input class="filtro-select" type="date" id="f-data-ini" onchange="renderLogs()" title="Data inicial">
+            <input class="filtro-select" type="date" id="f-data-fim" onchange="renderLogs()" title="Data final">
+        </div>
+
+        <div class="log-count" id="log-count"></div>
+        <div class="log-lista" id="log-lista">
+            <div class="estado-vazio">
+                <span class="material-icons">hourglass_empty</span>
+                <p>Carregando logs do sistema...</p>
+            </div>
+        </div>
+        <button class="btn-load-more" id="btn-more" style="display:none" onclick="mostrarMais()">
+            <span class="material-icons" style="vertical-align:middle;font-size:1rem">expand_more</span>
+            Carregar mais registros
+        </button>
+    </main>
+</section>
+
+<footer>
+    Seção de Operações — P3 / 10º Batalhão de Polícia Militar
+</footer>
+
+<!-- MODAL DETALHE -->
+<div class="modal-overlay" id="modal-detalhe">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h3><span class="material-icons" style="font-size:1rem">info</span> Detalhe do Registro</h3>
+            <button onclick="fecharDetalhe()">✕</button>
+        </div>
+        <div class="modal-body" id="modal-body-detalhe"></div>
+    </div>
+</div>
+
+<script>
+    // ================================================================
+    // CONFIG
+    // ================================================================
+    const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
+    const fbGet  = async p => (await fetch(`${FB_URL}/${p}.json`)).json();
+    const fbPost = async (n,d) => (await fetch(`${FB_URL}/${n}.json`,{method:'POST',body:JSON.stringify(d),headers:{'Content-Type':'application/json'}})).json();
+
+    const PAGE_SIZE = 50;
+    let _todos  = [];   // todos os logs brutos
+    let _filtrados = []; // após filtros
+    let _exibidos  = 0;  // quantos foram renderizados
+    let _acaoFiltro = '';
+    const _logMap  = {};  // id → objeto log (evita JSON no onclick)
+
+    // ================================================================
+    // UTILIDADES
+    // ================================================================
+    function fmtData(iso) {
+        if (!iso) return '—';
+        try {
+            const d = new Date(iso);
+            return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        } catch { return iso; }
+    }
+
+    function fmtDataCurta(iso) {
+        if (!iso) return '—';
+        try {
+            const d = new Date(iso);
+            return d.toLocaleDateString('pt-BR') + '\n' + d.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+        } catch { return iso; }
+    }
+
+    function badgeClass(acao) {
+        const map = { criar:'badge-criar', editar:'badge-editar', excluir:'badge-excluir',
+                      aprovar:'badge-aprovar', revogar:'badge-revogar', vistoria:'badge-vistoria',
+                      relatorio:'badge-relatorio', importar:'badge-importar', login:'badge-login', mapa:'badge-mapa' };
+        return map[acao] || 'badge-editar';
+    }
+    function acaoLabel(acao) {
+        const map = { criar:'Cadastro', editar:'Edição', excluir:'Exclusão',
+                      aprovar:'Aprovação', revogar:'Revogação', vistoria:'Vistoria',
+                      relatorio:'Relatório', importar:'Importação', login:'Login', mapa:'Mapa' };
+        return map[acao] || acao;
+    }
+
+    function atualizarRelogio() {
+        const el = document.getElementById('relogio');
+        if (el) el.textContent = new Date().toLocaleString('pt-BR');
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = '../page/login.html';
+    }
+
+    function checkLogin() {
+        const u = localStorage.getItem('frota_usuario');
+        const p = localStorage.getItem('frota_perfil');
+        if (!u) { window.location.href = '../page/login.html'; return false; }
+        if (p !== 'ADMIN') { alert('Acesso restrito a administradores.'); history.back(); return false; }
+        const el = document.getElementById('user-info');
+        if (el) el.textContent = u + ' [' + p + ']';
+        return true;
+    }
+
+    // ================================================================
+    // COLETA DE LOGS — agrega dados de todos os nós do Firebase
+    // ================================================================
+    async function carregarTodosLogs() {
+        const lista = document.getElementById('log-lista');
+        lista.innerHTML = `<div class="estado-vazio"><span class="material-icons">sync</span><p>Consultando todos os módulos...</p></div>`;
+
+        const logs = [];
+
+        // ── LOGS nativos (nó dedicado) ──────────────────────────────
+        try {
+            const logsDb = await fbGet('logs') || {};
+            for (const [id, l] of Object.entries(logsDb)) {
+                logs.push({ ...l, _id: id, _origem: 'logs' });
+            }
+        } catch {}
+
+        // ── USUÁRIOS ─────────────────────────────────────────────────
+        try {
+            const usuarios = await fbGet('usuarios') || {};
+            for (const [id, u] of Object.entries(usuarios)) {
+                if (u.criadoEm) logs.push({
+                    ts: u.criadoEm, acao: 'criar', modulo: 'Usuários',
+                    usuario: u.criadoPor || 'Sistema',
+                    descricao: `Novo usuário cadastrado: <strong>${u.posto || ''} ${u.usuario || id}</strong>`,
+                    detalhe: { nome: u.usuario, nomeCompleto: u.nomeCompleto, posto: u.posto, perfil: u.perfil, matricula: u.matricula, secao: u.secao },
+                    _id: 'usr_' + id, _origem: 'usuarios'
+                });
+                if (u.atualizadoEm && u.atualizadoEm !== u.criadoEm) logs.push({
+                    ts: u.atualizadoEm, acao: 'editar', modulo: 'Usuários',
+                    usuario: u.atualizadoPor || 'Sistema',
+                    descricao: `Usuário editado: <strong>${u.posto || ''} ${u.usuario || id}</strong>`,
+                    detalhe: { nome: u.usuario, nomeCompleto: u.nomeCompleto, posto: u.posto, perfil: u.perfil, matricula: u.matricula },
+                    _id: 'usr_edit_' + id, _origem: 'usuarios'
+                });
+                if (u.aprovadoEm) logs.push({
+                    ts: u.aprovadoEm, acao: 'aprovar', modulo: 'Usuários',
+                    usuario: u.aprovadoPor || 'Sistema',
+                    descricao: `Acesso aprovado: <strong>${u.posto || ''} ${u.usuario || id}</strong> como ${u.perfil}`,
+                    detalhe: { nome: u.usuario, perfil: u.perfil, aprovadoPor: u.aprovadoPor },
+                    _id: 'usr_apr_' + id, _origem: 'usuarios'
+                });
+                if (u.revogadoEm) logs.push({
+                    ts: u.revogadoEm, acao: 'revogar', modulo: 'Usuários',
+                    usuario: u.revogadoPor || 'Sistema',
+                    descricao: `Acesso revogado: <strong>${u.usuario || id}</strong>`,
+                    detalhe: { nome: u.usuario, revogadoPor: u.revogadoPor },
+                    _id: 'usr_rev_' + id, _origem: 'usuarios'
+                });
+            }
+        } catch(e) { console.warn('Usuários:', e); }
+
+        // ── MOTORISTAS ───────────────────────────────────────────────
+        try {
+            const motoristas = await fbGet('motoristas') || {};
+            for (const [id, m] of Object.entries(motoristas)) {
+                if (m.criadoEm) logs.push({
+                    ts: m.criadoEm, acao: m.fonteImport ? 'importar' : 'criar', modulo: 'Motoristas',
+                    usuario: m.criadoPor || 'Sistema',
+                    descricao: m.fonteImport
+                        ? `Importado via ${m.fonteImport}: <strong>${m.posto || ''} ${m.nomeGuerra || id}</strong>`
+                        : `Motorista cadastrado: <strong>${m.posto || ''} ${m.nomeGuerra || id}</strong>`,
+                    detalhe: { nome: m.nomeCivil, nomeGuerra: m.nomeGuerra, posto: m.posto, matricula: m.matricula, cpf: m.cpf ? m.cpf.substring(0,3)+'.***.***-**' : '—', cnh: m.cnh, status: m.status },
+                    _id: 'mot_' + id, _origem: 'motoristas'
+                });
+                if (m.atualizadoEm && m.atualizadoEm !== m.criadoEm) logs.push({
+                    ts: m.atualizadoEm, acao: 'editar', modulo: 'Motoristas',
+                    usuario: m.atualizadoPor || 'Sistema',
+                    descricao: `Motorista editado: <strong>${m.posto || ''} ${m.nomeGuerra || id}</strong>`,
+                    detalhe: { nome: m.nomeCivil, nomeGuerra: m.nomeGuerra, status: m.status, cnh: m.cnh, categoriaCnh: m.categoriaCnh },
+                    _id: 'mot_edit_' + id, _origem: 'motoristas'
+                });
+            }
+        } catch(e) { console.warn('Motoristas:', e); }
+
+        // ── VIATURAS ─────────────────────────────────────────────────
+        try {
+            const viaturas = await fbGet('viaturas') || {};
+            for (const [id, v] of Object.entries(viaturas)) {
+                if (v.criadoEm) logs.push({
+                    ts: v.criadoEm, acao: 'criar', modulo: 'Viaturas',
+                    usuario: v.criadoPor || 'Sistema',
+                    descricao: `Viatura cadastrada: <strong>${v.prefixo || id} — ${v.modelo || ''}</strong> (${v.placa || '—'})`,
+                    detalhe: { prefixo: v.prefixo, placa: v.placa, modelo: v.modelo, ano: v.ano, status: v.status },
+                    _id: 'vtr_' + id, _origem: 'viaturas'
+                });
+                if (v.atualizadoEm && v.atualizadoEm !== v.criadoEm) logs.push({
+                    ts: v.atualizadoEm, acao: 'editar', modulo: 'Viaturas',
+                    usuario: v.atualizadoPor || 'Sistema',
+                    descricao: `Viatura editada: <strong>${v.prefixo || id} — ${v.modelo || ''}</strong>`,
+                    detalhe: { prefixo: v.prefixo, placa: v.placa, modelo: v.modelo, status: v.status },
+                    _id: 'vtr_edit_' + id, _origem: 'viaturas'
+                });
+            }
+        } catch(e) { console.warn('Viaturas:', e); }
+
+        // ── MAPA DIÁRIO ──────────────────────────────────────────────
+        try {
+            const mapa = await fbGet('mapa_diario') || {};
+            for (const [id, e] of Object.entries(mapa)) {
+                logs.push({
+                    ts: e.dataHora || e.criadoEm || id, acao: 'mapa', modulo: 'Mapa Diário',
+                    usuario: e.responsavel || e.criadoPor || 'Sistema',
+                    descricao: `Lançamento: <strong>${e.guarnicao || '—'}</strong> — Viatura ${e.prefixo || '—'} (${e.placa || '—'})`,
+                    detalhe: { guarnicao: e.guarnicao, viatura: e.prefixo, placa: e.placa, dataAgendamento: e.dataAgendamento, responsavel: e.responsavel },
+                    _id: 'map_' + id, _origem: 'mapa_diario'
+                });
+            }
+        } catch(e) { console.warn('Mapa:', e); }
+
+        // ── VISTORIAS ────────────────────────────────────────────────
+        try {
+            const vistorias = await fbGet('vistorias') || {};
+            for (const [id, v] of Object.entries(vistorias)) {
+                logs.push({
+                    ts: v.dataHora || v.criadoEm || id, acao: 'vistoria', modulo: 'Vistoria',
+                    usuario: v.usuario || v.criadoPor || 'Sistema',
+                    descricao: `Vistoria realizada: <strong>${v.prefixo || '—'}</strong> (${v.placa || '—'}) por ${v.motorista || '—'}`,
+                    detalhe: { prefixo: v.prefixo, placa: v.placa, motorista: v.motorista, guarnicao: v.guarnicao, km: v.km, combustivel: v.combustivel, usuario: v.usuario },
+                    _id: 'vis_' + id, _origem: 'vistorias'
+                });
+            }
+        } catch(e) { console.warn('Vistorias:', e); }
+
+        // ── RELATÓRIOS DIÁRIOS ───────────────────────────────────────
+        try {
+            const relatorios = await fbGet('relatorios_diarios') || {};
+            for (const [id, r] of Object.entries(relatorios)) {
+                if (!r || typeof r !== 'object') continue;
+                const ts = r.assinatura?.assinadoEm || r.atualizadoEm || r.criadoEm || id;
+                const assinado = !!(r.assinatura?.hash);
+                logs.push({
+                    ts, acao: 'relatorio', modulo: 'Relatório',
+                    usuario: r.assinatura?.nome || r.usuario || 'Sistema',
+                    descricao: `Relatório diário ${assinado ? '<strong>assinado</strong>' : 'salvo'}: data ${id.replace(/_/g,'-')}`,
+                    detalhe: { data: id.replace(/_/g,'-'), assinado: assinado ? 'Sim' : 'Não', assinante: r.assinatura?.nome || '—', matricula: r.assinatura?.cargo || '—' },
+                    _id: 'rel_' + id, _origem: 'relatorios_diarios'
+                });
+            }
+        } catch(e) { console.warn('Relatórios:', e); }
+
+        // ── MANUTENÇÃO ───────────────────────────────────────────────
+        try {
+            const manutencao = await fbGet('manutencao') || {};
+            for (const [id, m] of Object.entries(manutencao)) {
+                if (!m || typeof m !== 'object') continue;
+                logs.push({
+                    ts: m.criadoEm || m.dataEntrada || id, acao: 'criar', modulo: 'Manutenção',
+                    usuario: m.criadoPor || m.responsavel || 'Sistema',
+                    descricao: `Manutenção registrada: <strong>${m.prefixo || '—'}</strong> (${m.placa || '—'}) — ${m.tipoServico || m.descricao || '—'}`,
+                    detalhe: { prefixo: m.prefixo, placa: m.placa, tipo: m.tipoServico, status: m.status, oficina: m.oficina, valor: m.valor },
+                    _id: 'man_' + id, _origem: 'manutencao'
+                });
+                if (m.atualizadoEm && m.atualizadoEm !== m.criadoEm) logs.push({
+                    ts: m.atualizadoEm, acao: 'editar', modulo: 'Manutenção',
+                    usuario: m.atualizadoPor || 'Sistema',
+                    descricao: `Manutenção atualizada: <strong>${m.prefixo || '—'}</strong> — status: ${m.status || '—'}`,
+                    detalhe: { prefixo: m.prefixo, status: m.status, atualizadoPor: m.atualizadoPor },
+                    _id: 'man_edit_' + id, _origem: 'manutencao'
+                });
+            }
+        } catch(e) { console.warn('Manutenção:', e); }
+
+        // ── SINISTROS ────────────────────────────────────────────────
+        try {
+            const sinistros = await fbGet('sinistros') || {};
+            for (const [id, s] of Object.entries(sinistros)) {
+                if (!s || typeof s !== 'object') continue;
+                logs.push({
+                    ts: s.criadoEm || s.dataOcorrencia || id, acao: 'criar', modulo: 'Sinistros',
+                    usuario: s.criadoPor || 'Sistema',
+                    descricao: `Sinistro registrado: <strong>${s.prefixo || '—'}</strong> (${s.placa || '—'}) — ${s.tipo || '—'}`,
+                    detalhe: { prefixo: s.prefixo, placa: s.placa, tipo: s.tipo, dataOcorrencia: s.dataOcorrencia, status: s.status },
+                    _id: 'sin_' + id, _origem: 'sinistros'
+                });
+            }
+        } catch(e) { console.warn('Sinistros:', e); }
+
+        // ── Ordena do mais recente para o mais antigo ────────────────
+        _todos = logs.sort((a, b) => {
+            const ta = new Date(a.ts).getTime() || 0;
+            const tb = new Date(b.ts).getTime() || 0;
+            return tb - ta;
+        });
+
+        atualizarStats();
+        renderLogs();
+    }
+
+    // ================================================================
+    // STATS
+    // ================================================================
+    function atualizarStats() {
+        const conta = (acao) => _todos.filter(l => !acao || l.acao === acao).length;
+        document.getElementById('sn-total').textContent    = conta('').toLocaleString('pt-BR');
+        document.getElementById('sn-criar').textContent    = conta('criar').toLocaleString('pt-BR');
+        document.getElementById('sn-editar').textContent   = conta('editar').toLocaleString('pt-BR');
+        document.getElementById('sn-excluir').textContent  = conta('excluir').toLocaleString('pt-BR');
+        document.getElementById('sn-vistoria').textContent = conta('vistoria').toLocaleString('pt-BR');
+        document.getElementById('sn-relatorio').textContent= conta('relatorio').toLocaleString('pt-BR');
+        document.getElementById('sn-importar').textContent = conta('importar').toLocaleString('pt-BR');
+    }
+
+    function filtrarAcao(acao) {
+        _acaoFiltro = acao;
+        document.getElementById('f-acao').value = acao;
+        document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+        const map = { '':'stat-todos', criar:'stat-criar', editar:'stat-editar',
+                      excluir:'stat-excluir', vistoria:'stat-vistoria',
+                      relatorio:'stat-relatorio', importar:'stat-importar' };
+        const card = document.getElementById(map[acao] || 'stat-todos');
+        if (card) card.classList.add('active');
+        renderLogs();
+    }
+
+    // ================================================================
+    // RENDERIZAÇÃO
+    // ================================================================
+    function renderLogs() {
+        const busca   = (document.getElementById('f-busca').value || '').toLowerCase();
+        const modulo  = document.getElementById('f-modulo').value;
+        const acao    = document.getElementById('f-acao').value || _acaoFiltro;
+        const dIni    = document.getElementById('f-data-ini').value;
+        const dFim    = document.getElementById('f-data-fim').value;
+
+        _filtrados = _todos.filter(l => {
+            if (acao   && l.acao   !== acao)   return false;
+            if (modulo && l.modulo !== modulo) return false;
+            if (dIni) {
+                const d = new Date(l.ts);
+                if (d < new Date(dIni + 'T00:00:00')) return false;
+            }
+            if (dFim) {
+                const d = new Date(l.ts);
+                if (d > new Date(dFim + 'T23:59:59')) return false;
+            }
+            if (busca) {
+                const haystack = [l.usuario, l.modulo, l.acao, l.descricao?.replace(/<[^>]*>/g,'')]
+                    .join(' ').toLowerCase();
+                if (!haystack.includes(busca)) return false;
+            }
+            return true;
+        });
+
+        _exibidos = 0;
+        const lista = document.getElementById('log-lista');
+        lista.innerHTML = '';
+        document.getElementById('log-count').textContent =
+            `${_filtrados.length.toLocaleString('pt-BR')} registro(s) encontrado(s)`;
+
+        if (!_filtrados.length) {
+            lista.innerHTML = `<div class="estado-vazio"><span class="material-icons">search_off</span><p>Nenhum registro encontrado para os filtros aplicados.</p></div>`;
+            document.getElementById('btn-more').style.display = 'none';
+            return;
+        }
+
+        mostrarMais();
+    }
+
+    function mostrarMais() {
+        const lista = document.getElementById('log-lista');
+        const lote  = _filtrados.slice(_exibidos, _exibidos + PAGE_SIZE);
+        lote.forEach(l => lista.insertAdjacentHTML('beforeend', buildEntryHTML(l)));
+        _exibidos += lote.length;
+        document.getElementById('btn-more').style.display =
+            _exibidos < _filtrados.length ? '' : 'none';
+    }
+
+    function buildEntryHTML(l) {
+        const ts = fmtData(l.ts);
+        const badge = badgeClass(l.acao);
+        const label = acaoLabel(l.acao);
+        const dataStr = ts.split(' ');
+        // Guarda o objeto no map e usa só o ID no onclick (evita quebra por aspas no JSON)
+        _logMap[l._id] = l;
+        return `<div class="log-entry" onclick="abrirDetalhe('${l._id}')" title="Clique para ver detalhes">
+            <div class="log-ts">${dataStr[0]}<br><strong>${dataStr[1] || ''}</strong></div>
+            <div><span class="log-badge ${badge}">${label}</span></div>
+            <div class="log-modulo">${l.modulo || '—'}</div>
+            <div class="log-desc">${l.descricao || '—'}</div>
+            <div class="log-user">${l.usuario || '—'}</div>
+        </div>`;
+    }
+
+    // ================================================================
+    // MODAL DETALHE
+    // ================================================================
+    function abrirDetalhe(id) {
+        const l = _logMap[id]; if (!l) return;
+        const body = document.getElementById('modal-body-detalhe');
+        const rows = [
+            ['Timestamp',  fmtData(l.ts)],
+            ['Ação',       `<span class="log-badge ${badgeClass(l.acao)}">${acaoLabel(l.acao)}</span>`],
+            ['Módulo',     l.modulo || '—'],
+            ['Responsável',l.usuario || '—'],
+            ['Descrição',  l.descricao || '—'],
+        ];
+        if (l.detalhe && Object.keys(l.detalhe).length) {
+            const json = JSON.stringify(l.detalhe, null, 2);
+            rows.push(['Dados', `<pre>${json}</pre>`]);
+        }
+        body.innerHTML = rows.map(([k, v]) =>
+            `<div class="detalhe-row">
+                <div class="detalhe-key">${k}</div>
+                <div class="detalhe-val">${v}</div>
+            </div>`
+        ).join('');
+        document.getElementById('modal-detalhe').classList.add('open');
+    }
+
+    function fecharDetalhe() {
+        document.getElementById('modal-detalhe').classList.remove('open');
+    }
+
+    document.getElementById('modal-detalhe').addEventListener('click', function(e) {
+        if (e.target === this) fecharDetalhe();
+    });
+    document.querySelector('.modal-box').addEventListener('click', e => e.stopPropagation());
+
+    // ================================================================
+    // FILTROS
+    // ================================================================
+    function limparFiltros() {
+        document.getElementById('f-busca').value    = '';
+        document.getElementById('f-modulo').value   = '';
+        document.getElementById('f-acao').value     = '';
+        document.getElementById('f-data-ini').value = '';
+        document.getElementById('f-data-fim').value = '';
+        _acaoFiltro = '';
+        document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+        renderLogs();
+    }
+
+    // ================================================================
+    // EXPORTAR CSV
+    // ================================================================
+    function exportarCSV() {
+        if (!_filtrados.length) { alert('Nenhum registro para exportar.'); return; }
+        const header = ['Data/Hora','Ação','Módulo','Descrição','Responsável'];
+        const rows   = _filtrados.map(l => [
+            fmtData(l.ts),
+            acaoLabel(l.acao),
+            l.modulo || '',
+            (l.descricao || '').replace(/<[^>]*>/g,''),
+            l.usuario || ''
+        ]);
+        const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `logs_frota_${new Date().toISOString().substring(0,10)}.csv`;
+        link.click();
+    }
+
+    // ================================================================
+    // REGISTRO DE LOGS (para usar nos outros módulos)
+    // ================================================================
+    // Exporta função global para que outras páginas possam chamar:
+    // window.registrarLog({ acao, modulo, descricao, detalhe })
+    window.registrarLog = async function(dados) {
+        try {
+            await fbPost('logs', {
+                ts:       new Date().toISOString(),
+                usuario:  localStorage.getItem('frota_usuario') || 'Sistema',
+                perfil:   localStorage.getItem('frota_perfil')  || '',
+                ...dados
+            });
+        } catch(e) { console.warn('Erro ao registrar log:', e); }
+    };
+
+    // ================================================================
+    // INIT
+    // ================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!checkLogin()) return;
+        atualizarRelogio();
+        setInterval(atualizarRelogio, 1000);
+        carregarTodosLogs();
+        document.getElementById('stat-todos').classList.add('active');
+    });
+</script>
+</body>
+</html>
