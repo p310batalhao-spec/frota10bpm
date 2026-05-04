@@ -1,8 +1,17 @@
-        const FB_URL='https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
+const FB_URL='https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
         async function fb_get(n){return(await fetch(`${FB_URL}/${n}.json`)).json()}
         async function fb_post(n,d){return(await fetch(`${FB_URL}/${n}.json`,{method:'POST',body:JSON.stringify(d),headers:{'Content-Type':'application/json'}})).json()}
         async function fb_put(n,id,d){return(await fetch(`${FB_URL}/${n}/${id}.json`,{method:'PUT',body:JSON.stringify(d),headers:{'Content-Type':'application/json'}})).json()}
         async function fb_delete(n,id){return fetch(`${FB_URL}/${n}/${id}.json`,{method:'DELETE'})}
+
+        // Formata CPF enquanto o usuário digita: 000.000.000-00
+        function mascararCPF(el) {
+            let v = el.value.replace(/\D/g, '');
+            if (v.length > 9) v = v.substring(0,3)+'.'+v.substring(3,6)+'.'+v.substring(6,9)+'-'+v.substring(9,11);
+            else if (v.length > 6) v = v.substring(0,3)+'.'+v.substring(3,6)+'.'+v.substring(6);
+            else if (v.length > 3) v = v.substring(0,3)+'.'+v.substring(3);
+            el.value = v.substring(0, 14);
+        }
 
         function atualizarRelogio(){const a=new Date();document.getElementById('relogio').innerHTML=`${a.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'long',year:'numeric'})} <br> ${a.toLocaleTimeString('pt-BR')}`}
 
@@ -28,20 +37,21 @@
             if(b)arr=arr.filter(([,m])=>(m.nomeGuerra||'').toLowerCase().includes(b)||(m.nomeCivil||'').toLowerCase().includes(b)||(m.matricula||'').toLowerCase().includes(b)||(m.posto||'').toLowerCase().includes(b)||(m.cnh||'').toLowerCase().includes(b));
             arr.sort((a,b)=>(a[1].nomeGuerra||'').localeCompare(b[1].nomeGuerra||''));
             document.getElementById('contador-registros').textContent=`${arr.length} motorista${arr.length!==1?'s':''} encontrado${arr.length!==1?'s':''}`;
-            if(!arr.length){tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:28px;color:#aaa">Nenhum motorista encontrado.</td></tr>';return}
+            if(!arr.length){tbody.innerHTML='<tr><td colspan="13" style="text-align:center;padding:28px;color:#aaa">Nenhum motorista encontrado.</td></tr>';return}
             tbody.innerHTML=arr.map(([id,m])=>{
                 const venc=cnhVencida(m.validadeCnh);
                 const vf=m.validadeCnh?new Date(m.validadeCnh+'T00:00:00').toLocaleDateString('pt-BR'):'--';
                 const vh=venc?`<span style="color:#dc3545;font-weight:700" title="CNH Vencida">⚠️ ${vf}</span>`:vf;
-                return`<tr><td><strong>${m.matricula||'--'}</strong></td><td><strong>${m.nomeGuerra||'--'}</strong></td><td>${m.nomeCivil||'--'}</td><td>${m.posto||'--'}</td><td>${m.subunidade||'--'}</td><td>${m.cnh||'--'}</td><td>${m.categoriaCnh||'--'}</td><td>${vh}</td><td>${m.telefone||'--'}</td><td>${badgeStatus(m.status||'Ativo')}</td><td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${m.obs||''}">${m.obs||'<span style="color:#ccc">—</span>'}</td><td><button class="btn-acao btn-editar" onclick="abrirModalEditar('${id}')">✏️ Editar</button><button class="btn-acao btn-excluir" onclick="excluirMotorista('${id}','${m.nomeGuerra||''}')">🗑️</button></td></tr>`;
+                const cpfExib=m.cpf&&m.cpf.replace(/\D/g,'').length===11?m.cpf.replace(/\D/g,'').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.***.***-$4'):(m.cpf||'--');
+                return`<tr><td><strong>${m.matricula||'--'}</strong></td><td><strong>${m.nomeGuerra||'--'}</strong></td><td>${m.nomeCivil||'--'}</td><td style="font-family:monospace;font-size:.78rem">${cpfExib}</td><td>${m.posto||'--'}</td><td>${m.subunidade||'--'}</td><td>${m.cnh||'--'}</td><td>${m.categoriaCnh||'--'}</td><td>${vh}</td><td>${m.telefone||'--'}</td><td>${badgeStatus(m.status||'Ativo')}</td><td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${m.obs||''}">${m.obs||'<span style="color:#ccc">—</span>'}</td><td><button class="btn-acao btn-editar" onclick="abrirModalEditar('${id}')">&#9999;&#65039; Editar</button><button class="btn-acao btn-excluir" onclick="excluirMotorista('${id}','${(m.nomeGuerra||'')}')">&#128465;&#65039;</button></td></tr>`;
             }).join('');
         }
 
-        function limparModal(){['m-id','m-matricula','m-nomeGuerra','m-nomeCivil','m-subunidade','m-cnh','m-validadeCnh','m-restricoesCnh','m-motivoAfastamento','m-telefone','m-email','m-obs'].forEach(id=>document.getElementById(id).value='');document.getElementById('m-posto').value='';document.getElementById('m-turno').value='';document.getElementById('m-categoriaCnh').value='';document.getElementById('m-status').value='Ativo';document.getElementById('m-msg').textContent=''}
+        function limparModal(){['m-id','m-matricula','m-nomeGuerra','m-nomeCivil','m-cpf','m-subunidade','m-cnh','m-validadeCnh','m-restricoesCnh','m-motivoAfastamento','m-telefone','m-email','m-obs'].forEach(id=>document.getElementById(id).value='');document.getElementById('m-posto').value='';document.getElementById('m-turno').value='';document.getElementById('m-categoriaCnh').value='';document.getElementById('m-status').value='Ativo';document.getElementById('m-msg').textContent=''}
 
         function abrirModalNovo(){document.getElementById('modal-titulo').textContent='👤 Novo Motorista';limparModal();document.getElementById('modal-motorista').classList.add('open')}
 
-        function abrirModalEditar(id){const m=motoristasCache[id];if(!m)return;document.getElementById('modal-titulo').textContent=`✏️ Editar Motorista — ${m.nomeGuerra||id}`;document.getElementById('m-id').value=id;document.getElementById('m-matricula').value=m.matricula||'';document.getElementById('m-nomeGuerra').value=m.nomeGuerra||'';document.getElementById('m-nomeCivil').value=m.nomeCivil||'';document.getElementById('m-posto').value=m.posto||'';document.getElementById('m-subunidade').value=m.subunidade||'';document.getElementById('m-turno').value=m.turno||'';document.getElementById('m-cnh').value=m.cnh||'';document.getElementById('m-categoriaCnh').value=m.categoriaCnh||'';document.getElementById('m-validadeCnh').value=m.validadeCnh||'';document.getElementById('m-restricoesCnh').value=m.restricoesCnh||'';document.getElementById('m-telefone').value=m.telefone||'';document.getElementById('m-email').value=m.email||'';document.getElementById('m-status').value=m.status||'Ativo';document.getElementById('m-motivoAfastamento').value=m.motivoAfastamento||'';document.getElementById('m-obs').value=m.obs||'';document.getElementById('m-msg').textContent='';document.getElementById('modal-motorista').classList.add('open')}
+        function abrirModalEditar(id){const m=motoristasCache[id];if(!m)return;document.getElementById('modal-titulo').textContent=`✏️ Editar Motorista — ${m.nomeGuerra||id}`;document.getElementById('m-id').value=id;document.getElementById('m-matricula').value=m.matricula||'';document.getElementById('m-nomeGuerra').value=m.nomeGuerra||'';document.getElementById('m-nomeCivil').value=m.nomeCivil||'';document.getElementById('m-posto').value=m.posto||'';document.getElementById('m-subunidade').value=m.subunidade||'';document.getElementById('m-turno').value=m.turno||'';document.getElementById('m-cnh').value=m.cnh||'';document.getElementById('m-categoriaCnh').value=m.categoriaCnh||'';document.getElementById('m-validadeCnh').value=m.validadeCnh||'';document.getElementById('m-restricoesCnh').value=m.restricoesCnh||'';document.getElementById('m-telefone').value=m.telefone||'';document.getElementById('m-email').value=m.email||'';document.getElementById('m-cpf').value=m.cpf?(m.cpf.length===11?m.cpf.substring(0,3)+'.'+m.cpf.substring(3,6)+'.'+m.cpf.substring(6,9)+'-'+m.cpf.substring(9,11):m.cpf):'';document.getElementById('m-status').value=m.status||'Ativo';document.getElementById('m-motivoAfastamento').value=m.motivoAfastamento||'';document.getElementById('m-obs').value=m.obs||'';document.getElementById('m-msg').textContent='';document.getElementById('modal-motorista').classList.add('open')}
 
         function fecharModal(){document.getElementById('modal-motorista').classList.remove('open')}
 
@@ -62,10 +72,12 @@
             const status=document.getElementById('m-status').value;
             const motivoAfastamento=document.getElementById('m-motivoAfastamento').value.trim();
             const obs=document.getElementById('m-obs').value.trim();
+            const cpf=document.getElementById('m-cpf').value.replace(/\D/g,'').padStart(11,'0');
             const msgEl=document.getElementById('m-msg');
-            if(!matricula||!nomeGuerra||!posto||!cnh||!categoriaCnh||!validadeCnh){msgEl.style.color='#dc3545';msgEl.textContent='⚠️ Preencha os campos obrigatórios: Matrícula, Nome de Guerra, Posto, CNH, Categoria e Validade.';return}
+            // Valida CPF: obrigatório e deve ter 11 dígitos
+            if(!matricula||!nomeGuerra||!posto||!cnh||!categoriaCnh||!validadeCnh||cpf==='00000000000'){msgEl.style.color='#dc3545';msgEl.textContent='⚠️ Preencha os campos obrigatórios: Matrícula, Nome de Guerra, CPF, Posto, CNH, Categoria e Validade.';return}
             if(!id){const existe=Object.values(motoristasCache).some(m=>m.matricula&&m.matricula===matricula);if(existe){msgEl.style.color='#dc3545';msgEl.textContent='⚠️ Já existe um motorista com esta matrícula.';return}}
-            const dados={matricula,nomeGuerra,nomeCivil,posto,subunidade,turno,cnh,categoriaCnh,validadeCnh,restricoesCnh,telefone,email,status,motivoAfastamento,obs,atualizadoEm:new Date().toISOString(),atualizadoPor:localStorage.getItem('frota_usuario')||'Sistema'};
+            const dados={matricula,nomeGuerra,nomeCivil,cpf,posto,subunidade,turno,cnh,categoriaCnh,validadeCnh,restricoesCnh,telefone,email,status,motivoAfastamento,obs,atualizadoEm:new Date().toISOString(),atualizadoPor:localStorage.getItem('frota_usuario')||'Sistema'};
             msgEl.style.color='#155724';msgEl.textContent='Salvando...';
             try{
                 if(id){if(motoristasCache[id]?.criadoEm)dados.criadoEm=motoristasCache[id].criadoEm;await fb_put('motoristas',id,dados);msgEl.textContent='✅ Motorista atualizado com sucesso!';motoristasCache[id]=dados}

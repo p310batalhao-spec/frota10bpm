@@ -1,4 +1,4 @@
-        const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
+const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
 
         // ================================================================
         // BUSCA DE MOTORISTA POR CPF
@@ -286,10 +286,13 @@
                     return;
                 }
 
+                // Guarda itens num mapa pelo id do Firebase
+                // Isso evita que caracteres especiais no nome da guarnicao
+                // (apostrofos, barras, etc.) quebrem o atributo onclick do HTML.
+                // Ex: "D'ARCA" quebraria onclick="abrirVistoria('D'ARCA')" 
+                window._mapaItens = {};
                 pendentes.reverse().forEach(item => {
-                    const prefixoSafe   = encodeURI(item.prefixo  || '');
-                    const placaSafe     = encodeURI(item.placa    || '');
-                    const guarnicaoSafe = encodeURI(item.guarnicao|| '');
+                    window._mapaItens[item.id] = item;
                     corpo.innerHTML += `
                         <tr>
                             <td><strong>${item.guarnicao || '--'}</strong></td>
@@ -297,7 +300,7 @@
                             <td>${item.placa   || '--'}</td>
                             <td>
                                 <button class="btn-vistoria"
-                                    onclick="abrirVistoria(decodeURI('${guarnicaoSafe}'), decodeURI('${prefixoSafe}'), decodeURI('${placaSafe}'))">
+                                    onclick="abrirVistoriaPorId('${item.id}')">
                                     <span class="material-icons">assignment_turned_in</span> VISTORIAR
                                 </button>
                             </td>
@@ -312,6 +315,16 @@
         }
 
         // ── Abre o modal com os dados da guarnição ──
+                // Wrapper seguro: busca dados pelo id e repassa para abrirVistoria
+        function abrirVistoriaPorId(id) {
+            const item = window._mapaItens && window._mapaItens[id];
+            if (!item) {
+                console.error('[Vistoria] Item nao encontrado:', id);
+                return;
+            }
+            abrirVistoria(item.guarnicao || '', item.prefixo || '', item.placa || '');
+        }
+
         function abrirVistoria(guarnicao, prefixo, placa) {
             document.getElementById('v-guarnicao').value = guarnicao;
             document.getElementById('v-prefixo').value  = prefixo;
