@@ -223,14 +223,20 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
 
                 const hoje = hojeISO();
 
-                // ── 2. Monta o Set de prefixos+placas já vistoriados HOJE ──
-                //    Chave: "PREFIXO|PLACA" — mesma lógica usada ao renderizar os botões.
+                // ── 2. Monta o Set de IDs de lançamentos já vistoriados ──
+                // Chave: mapaId (ID unico do lancamento no Firebase).
+                // Isso permite que a MESMA viatura seja lançada e vistoriada
+                // multiplas vezes no mesmo dia (rodeizio entre guarnicoes).
                 const jaVistoriados = new Set();
 
                 if (dadosVistorias) {
                     Object.values(dadosVistorias).forEach(v => {
-                        // dataHora está em ISO → compara apenas a parte da data
-                        if (v.dataHora && v.dataHora.startsWith(hoje)) {
+                        // Se a vistoria tem mapaId, usa ele como chave unica.
+                        // Fallback legado: PREFIXO|PLACA para vistorias antigas
+                        // sem mapaId (registradas antes desta correcao).
+                        if (v.mapaId) {
+                            jaVistoriados.add(v.mapaId);
+                        } else if (v.dataHora && v.dataHora.startsWith(hoje)) {
                             jaVistoriados.add(`${(v.prefixo||'').trim()}|${(v.placa||'').trim()}`);
                         }
                     });
@@ -260,10 +266,14 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 }
 
                 // ── 4. Separa: pendentes vs. já vistoriadas ──
+                // Usa mapaId como chave: cada lancamento e independente,
+                // permitindo que a mesma viatura apareça multiplas vezes.
                 const pendentes    = listaDoDia.filter(item =>
+                    !jaVistoriados.has(item.id) &&
                     !jaVistoriados.has(`${(item.prefixo||'').trim()}|${(item.placa||'').trim()}`)
                 );
                 const concluidas   = listaDoDia.filter(item =>
+                    jaVistoriados.has(item.id) ||
                     jaVistoriados.has(`${(item.prefixo||'').trim()}|${(item.placa||'').trim()}`)
                 );
 
@@ -322,10 +332,14 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 console.error('[Vistoria] Item nao encontrado:', id);
                 return;
             }
-            abrirVistoria(item.guarnicao || '', item.prefixo || '', item.placa || '');
+            // Passa o mapaId para que seja gravado junto com a vistoria
+            abrirVistoria(item.guarnicao || '', item.prefixo || '', item.placa || '', item.id);
         }
 
-        function abrirVistoria(guarnicao, prefixo, placa) {
+        function abrirVistoria(guarnicao, prefixo, placa, mapaId) {
+            // Guarda o mapaId para salvar junto com a vistoria
+            if (!motoristaAtual) motoristaAtual = {};
+            motoristaAtual._mapaId = mapaId || null;
             document.getElementById('v-guarnicao').value = guarnicao;
             document.getElementById('v-prefixo').value  = prefixo;
             document.getElementById('v-placa').value    = placa;
@@ -406,7 +420,12 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                     cpf:               assinaturaDados.cpf,
                     horaConfirmacao:   assinaturaDados.horaConfirmacao,
                 },
-                dataHora: new Date().toISOString()
+                dataHora: new Date().toISOString(),
+                // mapaId: ID unico do lancamento no mapa_diario.
+                // Permite rastrear QUAL lancamento foi vistoriado,
+                // viabilizando que a mesma viatura seja vistoriada
+                // multiplas vezes no dia (um por lancamento).
+                mapaId: motoristaAtual?._mapaId || null
             };
 
             try {

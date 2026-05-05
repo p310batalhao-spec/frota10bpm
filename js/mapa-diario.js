@@ -75,7 +75,10 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 placa: v.placa,
                 modelo: v.modelo,
                 dataHora: new Date().toISOString(),
-                dataAgendamento: dataAgendamento, // data em que aparece para vistoria
+                // dataAgendamento: janela de 24h a partir de 00:00 desta data.
+                // Se nao agendada, usa a data de hoje (fica disponivel o dia inteiro).
+                dataAgendamento: dataAgendamento,
+                responsavel: localStorage.getItem('frota_usuario'),
                 criadoPor: localStorage.getItem('frota_usuario')
             };
 
@@ -199,10 +202,16 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 const agendadaExib = agendada !== '—'
                     ? agendada.split('-').reverse().join('/')
                     : '—';
+                // Janela de disponibilidade:
+                // - Se agendado: disponivel durante o dia inteiro da data agendada (00:00 ate 23:59).
+                // - Se nao agendado: dataAgendamento = hojeISO() no momento do lancamento,
+                //   entao fica disponivel o dia todo de hoje.
+                // Badge reflete o estado atual comparando com hoje.
                 const isHoje = agendada === hoje;
                 const isFutura = agendada > hoje;
+                const isEncerrada = agendada < hoje;
                 const badgeColor = isFutura ? '#e67e22' : (isHoje ? '#28a745' : '#6c757d');
-                const badgeLabel = isFutura ? 'Agendada' : (isHoje ? 'Hoje' : 'Encerrada');
+                const badgeLabel = isFutura ? 'Agendada' : (isHoje ? 'Disponível' : 'Encerrada');
                 corpo.innerHTML += `
             <tr>
                 <td><span class="tag-guarnicao">${item.guarnicao}</span></td>
