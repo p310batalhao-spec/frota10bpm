@@ -334,11 +334,12 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                                 <span style="color:#555;font-size:.75rem">KM saida: <strong>${kmSaida}</strong></span><br>
                                 <span style="color:#888;font-size:.72rem">${motoristaNome}</span>
                             </td>
-                            <td style="font-size:.8rem">${jaDevolvida
-                                ? `<span style="background:#6c757d;color:white;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:700">Devolvida</span><br><span style="color:#555;font-size:.75rem">KM retorno: <strong>${vDados.kmRetorno}</strong></span>`
-                                : `<button class="btn-vistoria" style="background:#1a2744;min-width:110px;color:white" onclick="abrirDevolucaoPorVistoriaId('${vId}','${item.id}')">
-                                    <span class="material-icons" style="color:white">reply</span> DEVOLVER
-                                  </button>`
+                            <td style="font-size:.8rem">${
+                                jaDevolvida
+                                ? '<span style="background:#6c757d;color:white;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:700">Devolvida</span><br><span style="color:#555;font-size:.75rem">KM retorno: <strong>' + vDados.kmRetorno + '</strong></span>'
+                                : '<button class="btn-vistoria" style="background:#c8a415;color:#1a2744;min-width:120px;display:inline-flex;align-items:center;gap:5px;font-weight:700" onclick="abrirDevolucaoPorVistoriaId(\'' + vId + '\',\'' + item.id + '\')">' +
+                                  '<span class="material-icons" style="font-size:1rem;color:#1a2744">reply</span> DEVOLVER' +
+                                  '</button>'
                             }</td>
                             <td></td>
                         </tr>`;
@@ -506,7 +507,7 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 document.getElementById('dev-km-retorno').value = '';
                 document.getElementById('dev-obs').value        = '';
                 document.getElementById('dev-msg').textContent  = '';
-                document.getElementById('modalDevolucao').style.display = 'block';
+                document.getElementById('modalDevolucao').style.display = 'flex';
             } catch(e) {
                 console.error(e);
                 mostrarMsg('Erro ao carregar dados da vistoria.', 'erro');
@@ -515,6 +516,9 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
 
         function fecharModalDevolucao() {
             document.getElementById('modalDevolucao').style.display = 'none';
+            document.getElementById('dev-km-retorno').value = '';
+            document.getElementById('dev-obs').value = '';
+            document.getElementById('dev-msg').textContent = '';
         }
 
         async function salvarDevolucao() {

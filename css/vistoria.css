@@ -1,4 +1,4 @@
-        :root {
+:root {
             --cor-primaria: #1a2744;
             --cor-secundaria: #2e3f6e;
             --cor-destaque: #c8a415;
@@ -117,14 +117,26 @@
             top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.7);
             z-index: 1000;
+            /* Centraliza o conteudo */
+            align-items: flex-start;
+            justify-content: center;
             overflow-y: auto;
             padding: 20px;
+        }
+        /* display:flex quando aberto via JS (style="display: block" -> sobrescreve) */
+        .modal[style*="block"],
+        .modal[style*="flex"] {
+            display: flex !important;
         }
 
         .modal-content {
             background: white;
             max-width: 700px;
-            margin: 20px auto;
+            width: 100%;
+            /* Limita a altura e permite scroll interno — nunca sai da tela */
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            margin: auto;
             border-radius: var(--radius);
             padding: 30px;
             position: relative;
@@ -177,6 +189,37 @@
             font-size: 1rem;
             margin-top: 10px;
         }
+
+        /* Botao de confirmacao dos modais (vistoria e devolucao) */
+        .btn-submit {
+            background: var(--cor-primaria);
+            color: white;
+            border: none;
+            padding: 11px 22px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: .9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background .2s;
+        }
+        .btn-submit:hover { background: var(--cor-secundaria); }
+
+        /* Botao cancelar dos modais */
+        .btn-cancelar-vistoria {
+            background: #eee;
+            color: #333;
+            border: none;
+            padding: 11px 18px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: .9rem;
+            transition: background .2s;
+        }
+        .btn-cancelar-vistoria:hover { background: #ddd; }
 
         #msg-feedback {
             position: fixed; top: 20px; right: 20px;
