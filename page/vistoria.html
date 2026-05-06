@@ -39,6 +39,8 @@
                         <th>Guarnição</th>
                         <th>Viatura</th>
                         <th>Placa</th>
+                        <th>Situação / KM Saída</th>
+                        <th>Devolução / KM Retorno</th>
                         <th>Ação</th>
                     </tr>
                 </thead>
@@ -337,5 +339,66 @@
     </footer>
 
 <script src="../js/vistoria.js"></script>
+
+    <!-- MODAL DEVOLUCAO -->
+    <div id="modalDevolucao" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center">
+        <div style="background:white;border-radius:14px;max-width:480px;width:95%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);animation:fadeIn .2s ease">
+            <div style="background:#1a2744;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
+                <h3 style="font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:6px">
+                    <span class="material-icons" style="font-size:1.1rem">reply</span>
+                    Devolução de Viatura
+                </h3>
+                <button onclick="fecharModalDevolucao()" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:1.3rem;cursor:pointer">✕</button>
+            </div>
+            <div style="padding:20px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div>
+                        <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:3px">Prefixo</label>
+                        <input type="text" id="dev-prefixo" readonly style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;background:#f8f9fa;font-size:.85rem">
+                    </div>
+                    <div>
+                        <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:3px">Placa</label>
+                        <input type="text" id="dev-placa" readonly style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;background:#f8f9fa;font-size:.85rem">
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:3px">Guarnição</label>
+                    <input type="text" id="dev-guarnicao" readonly style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;background:#f8f9fa;font-size:.85rem">
+                </div>
+                <div>
+                    <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:3px">Condutor</label>
+                    <input type="text" id="dev-motorista" readonly style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;background:#f8f9fa;font-size:.85rem">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div>
+                        <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:3px">KM de Saída</label>
+                        <input type="number" id="dev-km-saida" readonly style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;background:#f8f9fa;font-size:.85rem;font-weight:700">
+                    </div>
+                    <div>
+                        <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#1a2744;display:block;margin-bottom:3px">KM de Retorno *</label>
+                        <input type="number" id="dev-km-retorno" placeholder="Ex: 125430" min="0"
+                            style="width:100%;padding:8px;border:2px solid #1a2744;border-radius:6px;font-size:.85rem;font-weight:700;outline:none"
+                            onkeydown="if(event.key==='Enter') salvarDevolucao()">
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:3px">Observações do Retorno</label>
+                    <textarea id="dev-obs" rows="2" placeholder="Ocorrências durante a patrulha, avarias, etc..."
+                        style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:.82rem;font-family:inherit;resize:vertical"></textarea>
+                </div>
+                <p id="dev-msg" style="font-size:.8rem;min-height:16px;font-weight:600"></p>
+            </div>
+            <div style="padding:0 20px 20px;display:flex;gap:10px;justify-content:flex-end">
+                <button onclick="fecharModalDevolucao()"
+                    style="padding:9px 18px;background:#eee;border:none;border-radius:8px;cursor:pointer;font-size:.85rem">Cancelar</button>
+                <button onclick="salvarDevolucao()"
+                    style="padding:9px 22px;background:#1a2744;color:white;border:none;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:700;display:flex;align-items:center;gap:6px">
+                    <span class="material-icons" style="font-size:1rem">check_circle</span>
+                    Confirmar Devolução
+                </button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

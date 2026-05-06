@@ -252,10 +252,10 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                         if (item.dataAgendamento) {
                             dataItem = item.dataAgendamento; // já está em AAAA-MM-DD
                         } else {
-                            // fallback: extrai data de dataHora
-                            dataItem = item.dataHora.includes('T')
-                                ? item.dataHora.substring(0, 10)
-                                : item.dataHora.split('/').reverse().join('-');
+                            // fallback: converte ISO UTC para data LOCAL (BRT)
+                            // Sem isso lancamentos apos 21h aparecem como amanha
+                            const dtLocal = new Date(item.dataHora);
+                            dataItem = `${dtLocal.getFullYear()}-${String(dtLocal.getMonth()+1).padStart(2,'0')}-${String(dtLocal.getDate()).padStart(2,'0')}`;
                         }
                         return dataItem === hoje;
                     });
@@ -284,30 +284,34 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                     `Concluídas hoje: <strong style="color:#c8ff9a">${concluidas.length}</strong> &nbsp;|&nbsp; ` +
                     `Total do dia: <strong>${listaDoDia.length}</strong>`;
 
-                // ── 6. Renderiza pendentes ──
-                if (pendentes.length === 0) {
-                    corpo.innerHTML = `
-                        <tr>
-                            <td colspan="4" style="text-align:center;padding:28px">
-                                <span class="material-icons" style="font-size:2.5rem;color:#28a745;display:block;margin-bottom:8px">check_circle</span>
-                                <strong style="color:#28a745">Todas as viaturas do dia já foram vistoriadas! ✅</strong>
-                            </td>
-                        </tr>`;
-                    return;
+                // -- 6. Renderiza TODAS as linhas (pendentes + vistoriadas)
+                // Mapas rapidos para lookup de dados de vistoria por lancamento
+                const vistoriasPorMapaId = {};
+                const vistoriasPorChave  = {};
+                if (dadosVistorias) {
+                    Object.entries(dadosVistorias).forEach(([vid, v]) => {
+                        if (v.mapaId) vistoriasPorMapaId[v.mapaId] = { vistoriaId: vid, ...v };
+                        else if (v.dataHora && v.dataHora.startsWith(hoje))
+                            vistoriasPorChave[`${(v.prefixo||'').trim()}|${(v.placa||'').trim()}`] = { vistoriaId: vid, ...v };
+                    });
                 }
 
-                // Guarda itens num mapa pelo id do Firebase
-                // Isso evita que caracteres especiais no nome da guarnicao
-                // (apostrofos, barras, etc.) quebrem o atributo onclick do HTML.
-                // Ex: "D'ARCA" quebraria onclick="abrirVistoria('D'ARCA')" 
                 window._mapaItens = {};
-                pendentes.reverse().forEach(item => {
+                // Pendentes primeiro, vistoriadas depois
+                [...pendentes, ...concluidas].forEach(item => {
                     window._mapaItens[item.id] = item;
-                    corpo.innerHTML += `
+                    const isPendente = pendentes.includes(item);
+                    const vDados = vistoriasPorMapaId[item.id] ||
+                        vistoriasPorChave[`${(item.prefixo||'').trim()}|${(item.placa||'').trim()}`];
+
+                    if (isPendente) {
+                        corpo.innerHTML += `
                         <tr>
                             <td><strong>${item.guarnicao || '--'}</strong></td>
                             <td>${item.prefixo || '--'}</td>
                             <td>${item.placa   || '--'}</td>
+                            <td>--</td>
+                            <td>--</td>
                             <td>
                                 <button class="btn-vistoria"
                                     onclick="abrirVistoriaPorId('${item.id}')">
@@ -315,6 +319,30 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                                 </button>
                             </td>
                         </tr>`;
+                    } else {
+                        const kmSaida   = vDados?.km || '--';
+                        const vId       = vDados?.vistoriaId || '';
+                        const jaDevolvida = vDados?.kmRetorno != null;
+                        const motoristaNome = vDados?.nomeCivil || vDados?.motorista || '--';
+                        corpo.innerHTML += `
+                        <tr style="background:rgba(40,167,69,.06)">
+                            <td><strong>${item.guarnicao || '--'}</strong></td>
+                            <td>${item.prefixo || '--'}</td>
+                            <td>${item.placa   || '--'}</td>
+                            <td style="font-size:.8rem">
+                                <span style="background:#28a745;color:white;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:700">Vistoriada</span><br>
+                                <span style="color:#555;font-size:.75rem">KM saida: <strong>${kmSaida}</strong></span><br>
+                                <span style="color:#888;font-size:.72rem">${motoristaNome}</span>
+                            </td>
+                            <td style="font-size:.8rem">${jaDevolvida
+                                ? `<span style="background:#6c757d;color:white;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:700">Devolvida</span><br><span style="color:#555;font-size:.75rem">KM retorno: <strong>${vDados.kmRetorno}</strong></span>`
+                                : `<button class="btn-vistoria" style="background:#1a2744;min-width:110px;color:white" onclick="abrirDevolucaoPorVistoriaId('${vId}','${item.id}')">
+                                    <span class="material-icons" style="color:white">reply</span> DEVOLVER
+                                  </button>`
+                            }</td>
+                            <td></td>
+                        </tr>`;
+                    }
                 });
 
             } catch (e) {
@@ -456,6 +484,126 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
             el.style.backgroundColor = tipo === 'ok' ? 'var(--cor-success)' : 'var(--cor-danger)';
             setTimeout(() => el.style.display = 'none', 3500);
         }
+
+
+        // ================================================================
+        // DEVOLUCAO DE VIATURA
+        // ================================================================
+        let _devolucaoCtx = { vistoriaId: null, mapaItemId: null, vistoriaDados: null };
+
+        async function abrirDevolucaoPorVistoriaId(vistoriaId, mapaItemId) {
+            if (!vistoriaId) { mostrarMsg('Erro: ID da vistoria nao encontrado.', 'erro'); return; }
+            try {
+                const r = await fetch(`${FB_URL}/vistorias/${vistoriaId}.json`);
+                const v = await r.json();
+                if (!v) { mostrarMsg('Vistoria nao encontrada.', 'erro'); return; }
+                _devolucaoCtx = { vistoriaId, mapaItemId, vistoriaDados: v };
+                document.getElementById('dev-prefixo').value    = v.prefixo   || '';
+                document.getElementById('dev-placa').value      = v.placa     || '';
+                document.getElementById('dev-guarnicao').value  = v.guarnicao || '';
+                document.getElementById('dev-motorista').value  = v.nomeCivil || v.motorista || '';
+                document.getElementById('dev-km-saida').value   = v.km        || '';
+                document.getElementById('dev-km-retorno').value = '';
+                document.getElementById('dev-obs').value        = '';
+                document.getElementById('dev-msg').textContent  = '';
+                document.getElementById('modalDevolucao').style.display = 'block';
+            } catch(e) {
+                console.error(e);
+                mostrarMsg('Erro ao carregar dados da vistoria.', 'erro');
+            }
+        }
+
+        function fecharModalDevolucao() {
+            document.getElementById('modalDevolucao').style.display = 'none';
+        }
+
+        async function salvarDevolucao() {
+            const kmRetorno = parseFloat(document.getElementById('dev-km-retorno').value);
+            const kmSaida   = parseFloat(document.getElementById('dev-km-saida').value) || 0;
+            const obs       = document.getElementById('dev-obs').value.trim();
+            const msgEl     = document.getElementById('dev-msg');
+
+            if (!kmRetorno || isNaN(kmRetorno)) {
+                msgEl.style.color = '#dc3545';
+                msgEl.textContent = 'Informe o KM de retorno.';
+                return;
+            }
+            if (kmRetorno < kmSaida) {
+                msgEl.style.color = '#dc3545';
+                msgEl.textContent = `KM de retorno (${kmRetorno}) nao pode ser menor que o de saida (${kmSaida}).`;
+                return;
+            }
+            msgEl.style.color = '#555';
+            msgEl.textContent = 'Salvando...';
+
+            const agora = new Date().toISOString();
+            const v     = _devolucaoCtx.vistoriaDados;
+
+            try {
+                // 1. Atualiza a vistoria com os dados de retorno
+                await fetch(`${FB_URL}/vistorias/${_devolucaoCtx.vistoriaId}.json`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({
+                        kmRetorno,
+                        kmRodados:    kmRetorno - kmSaida,
+                        obsRetorno:   obs,
+                        dataRetorno:  agora,
+                        devolvidoPor: localStorage.getItem('frota_usuario') || 'Sistema',
+                    }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                // 2. Atualiza o KM atual da viatura em /viaturas
+                const viaturas = await fetch(`${FB_URL}/viaturas.json`).then(r => r.json()) || {};
+                const entrada  = Object.entries(viaturas).find(([, vt]) =>
+                    vt.placa === v.placa || vt.prefixo === v.prefixo
+                );
+                if (entrada) {
+                    const [viaturaId] = entrada;
+                    await fetch(`${FB_URL}/viaturas/${viaturaId}.json`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ kmAtual: kmRetorno, updatedAt: agora }),
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
+
+                // 3. Registra entrada de km no historico de manutencao
+                if (entrada) {
+                    const [viaturaId] = entrada;
+                    await fetch(`${FB_URL}/manutencao.json`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            tipo:       'km_devolucao',
+                            descricao:  `Retorno de patrulha — ${v.guarnicao || ''}`,
+                            prefixo:    v.prefixo,
+                            placa:      v.placa,
+                            viaturaId,
+                            kmSaida,
+                            kmRetorno,
+                            kmRodados:  kmRetorno - kmSaida,
+                            motorista:  v.nomeCivil || v.motorista || '',
+                            guarnicao:  v.guarnicao || '',
+                            criadoEm:   agora,
+                            criadoPor:  localStorage.getItem('frota_usuario') || 'Sistema',
+                        }),
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
+
+                mostrarMsg('Devolucao registrada! KM atualizado.', 'ok');
+                fecharModalDevolucao();
+                carregarMapaDoDia();
+
+            } catch(e) {
+                console.error(e);
+                msgEl.style.color = '#dc3545';
+                msgEl.textContent = 'Erro ao salvar devolucao.';
+            }
+        }
+
+        document.getElementById('modalDevolucao').addEventListener('click', function(e) {
+            if (e.target === this) fecharModalDevolucao();
+        });
 
         // Fecha modal APENAS ao clicar no fundo escuro do overlay
         document.getElementById('modalVistoria').addEventListener('click', function(e) {
