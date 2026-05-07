@@ -243,14 +243,24 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 const hoje = hojeISO();
                 const jaVistoriados = new Set();
 
+                // Mapeia vistorias: por mapaId (exato) e por PREFIXO|PLACA+DATA (legado)
+                // O legado só é usado quando o lançamento não tem mapaId na vistoria
+                const vistoriasPorMapaId  = new Set(); // mapaIds vistoriados
+                const vistoriasPorChaveDia = new Map(); // "PREFIXO|PLACA|DATA" -> true (legado)
+
                 if (dadosVistorias) {
                     Object.values(dadosVistorias).forEach(v => {
-                        // Usa APENAS mapaId como chave.
-                        // O fallback PREFIXO|PLACA foi removido pois causava que
-                        // múltiplos lançamentos da mesma viatura (ex: várias FTs)
-                        // fossem incorretamente marcados como vistoriados.
                         if (v.mapaId) {
-                            jaVistoriados.add(v.mapaId);
+                            // Forma exata: mapaId unico por lancamento
+                            vistoriasPorMapaId.add(v.mapaId);
+                        } else if (v.prefixo && v.placa && v.dataHora) {
+                            // Legado: chave inclui a DATA da vistoria para nao bloquear
+                            // lancamentos futuros da mesma viatura (ex: FT amanha)
+                            const dataVist = new Date(v.dataHora);
+                            const dataStr  = `${dataVist.getFullYear()}-${String(dataVist.getMonth()+1).padStart(2,'0')}-${String(dataVist.getDate()).padStart(2,'0')}`;
+                            vistoriasPorChaveDia.set(
+                                `${v.prefixo.trim()}|${v.placa.trim()}|${dataStr}`, true
+                            );
                         }
                     });
                 }
@@ -270,17 +280,41 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 }
 
                 // ── 4. Separa pendentes vs. já vistoriadas ──
-                // Usa item.id (= mapaId do lançamento) como chave exclusiva.
-                // Cada lançamento é independente — mesma viatura pode aparecer várias vezes.
-                const pendentes  = visiveis.filter(item => !jaVistoriados.has(item.id));
-                const concluidas = visiveis.filter(item =>  jaVistoriados.has(item.id));
+                // Prioridade: mapaId exato. Se nao tiver, usa legado PREFIXO|PLACA|DATA.
+                // A data na chave legada garante que lancamentos futuros da mesma
+                // viatura nao sejam bloqueados por uma vistoria de hoje.
+                function foiVistoriado(item) {
+                    if (vistoriasPorMapaId.has(item.id)) return true;
+                    // Legado: so aplica se o lancamento for de hoje (sem mapaId)
+                    const d = new Date(item.dataHora);
+                    const dataLanc = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                    const chave = `${(item.prefixo||'').trim()}|${(item.placa||'').trim()}|${dataLanc}`;
+                    return vistoriasPorChaveDia.has(chave);
+                }
+
+                const pendentes  = visiveis.filter(item => !foiVistoriado(item));
+                const concluidas = visiveis.filter(item =>  foiVistoriado(item));
 
                 // ── 5. Contador no topo ──
+                // Conta vistorias feitas HOJE diretamente no nó /vistorias
+                // (independente de o lançamento ainda estar no mapa ou ter sido deletado)
+                let vistoriadasHoje = 0;
+                if (dadosVistorias) {
+                    Object.values(dadosVistorias).forEach(v => {
+                        if (!v.dataHora) return;
+                        const dv = new Date(v.dataHora);
+                        const dataVist = `${dv.getFullYear()}-${String(dv.getMonth()+1).padStart(2,'0')}-${String(dv.getDate()).padStart(2,'0')}`;
+                        if (dataVist === hoje) vistoriadasHoje++;
+                    });
+                }
+
                 const totalMsg = document.querySelector('.instrucao p');
-                totalMsg.innerHTML =
-                    `Pendentes: <strong>${pendentes.length}</strong> &nbsp;|&nbsp; ` +
-                    `Concluídas: <strong style="color:#c8ff9a">${concluidas.length}</strong> &nbsp;|&nbsp; ` +
-                    `Total visível: <strong>${visiveis.length}</strong>`;
+                if (totalMsg) {
+                    totalMsg.innerHTML =
+                        `Pendentes: <strong>${pendentes.length}</strong> &nbsp;|&nbsp; ` +
+                        `Concluídas hoje: <strong style="color:#c8ff9a">${vistoriadasHoje}</strong> &nbsp;|&nbsp; ` +
+                        `Total do dia: <strong>${visiveis.length + vistoriadasHoje}</strong>`;
+                }
 
                 // ── 6. Renderiza apenas pendentes — vistoriadas saem da tela ──
                 if (pendentes.length === 0) {
