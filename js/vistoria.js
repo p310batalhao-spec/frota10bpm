@@ -208,23 +208,13 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
             const hoje  = hojeISO();
 
             if (item.dataAgendamento) {
-                // Só exibe se o agendamento for para hoje
-                if (item.dataAgendamento !== hoje) return false;
-                // Janela: 00:00 de hoje até 09:00 de amanhã
-                const fim = new Date(hoje + 'T00:00:00');
-                fim.setDate(fim.getDate() + 1);
-                fim.setHours(9, 0, 0, 0);
-                return agora < fim;
+                // Exibe se o agendamento for para hoje
+                return item.dataAgendamento === hoje;
             } else {
-                // Só exibe se o lançamento foi feito hoje (data local)
+                // Converte ISO UTC para data LOCAL (getDate evita bug de fuso após 21h BRT)
                 const lancamento = new Date(item.dataHora);
                 const dataLanc   = `${lancamento.getFullYear()}-${String(lancamento.getMonth()+1).padStart(2,'0')}-${String(lancamento.getDate()).padStart(2,'0')}`;
-                if (dataLanc !== hoje) return false;
-                // Janela: a partir do momento do lançamento até 09:00 de amanhã
-                const fim = new Date(hoje + 'T00:00:00');
-                fim.setDate(fim.getDate() + 1);
-                fim.setHours(9, 0, 0, 0);
-                return agora >= lancamento && agora < fim;
+                return dataLanc === hoje;
             }
         }
 
@@ -295,10 +285,12 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
 
                 // ── 5. Contador no topo ──
                 const totalMsg = document.querySelector('.instrucao p');
-                totalMsg.innerHTML =
-                    `Pendentes: <strong>${pendentes.length}</strong> &nbsp;|&nbsp; ` +
-                    `Concluídas: <strong style="color:#c8ff9a">${concluidas.length}</strong> &nbsp;|&nbsp; ` +
-                    `Total visível: <strong>${visiveis.length}</strong>`;
+                if (totalMsg) {
+                    totalMsg.innerHTML =
+                        `Pendentes: <strong>${pendentes.length}</strong> &nbsp;|&nbsp; ` +
+                        `Vistoriadas hoje: <strong style="color:#c8ff9a">${concluidas.length}</strong> &nbsp;|&nbsp; ` +
+                        `Total do dia: <strong>${visiveis.length}</strong>`;
+                }
 
                 // ── 6. Mapas rápidos de lookup para dados da vistoria ──
                 const vistoriasPorMapaId = {};
@@ -316,26 +308,28 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                     });
                 }
 
-                // ── 7. Renderiza linhas (pendentes primeiro, concluídas depois) ──
-                window._mapaItens = {};
-                [...pendentes, ...concluidas].forEach(item => {
-                    window._mapaItens[item.id] = item;
-                    const isPendente = pendentes.includes(item);
-                    const chaveLeg   = `${(item.prefixo||'').trim()}|${(item.placa||'').trim()}`;
-                    const vDados     = vistoriasPorMapaId[item.id] || vistoriasPorChave[chaveLeg];
+                // ── 7. Renderiza apenas pendentes ──
+                // Viaturas já vistoriadas saem da tela automaticamente.
+                if (pendentes.length === 0) {
+                    corpo.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:28px">' +
+                        '<span class="material-icons" style="font-size:2.5rem;color:#28a745;display:block;margin-bottom:8px">check_circle</span>' +
+                        '<strong style="color:#28a745">Todas as viaturas do dia já foram vistoriadas! ✅</strong>' +
+                        '</td></tr>';
+                    return;
+                }
 
+                window._mapaItens = {};
+                pendentes.forEach(item => {
+                    window._mapaItens[item.id] = item;
                     const dtLanc = item.dataHora
                         ? new Date(item.dataHora).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
                         : '--';
-
-                    if (isPendente) {
-                        corpo.innerHTML += `
+                    corpo.innerHTML += `
                         <tr>
                             <td><strong>${item.guarnicao || '--'}</strong></td>
                             <td>${item.prefixo || '--'}</td>
                             <td>${item.placa   || '--'}</td>
                             <td style="font-size:.78rem;color:#666">${dtLanc}</td>
-                            <td>--</td>
                             <td>
                                 <button class="btn-vistoria"
                                     onclick="abrirVistoriaPorId('${item.id}')">
@@ -343,23 +337,6 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                                 </button>
                             </td>
                         </tr>`;
-                    } else {
-                        const kmSaida       = vDados?.km || '--';
-                        const motoristaNome = vDados?.nomeCivil || vDados?.motorista || '--';
-                        corpo.innerHTML += `
-                        <tr style="background:rgba(40,167,69,.06)">
-                            <td><strong>${item.guarnicao || '--'}</strong></td>
-                            <td>${item.prefixo || '--'}</td>
-                            <td>${item.placa   || '--'}</td>
-                            <td style="font-size:.78rem;color:#666">${dtLanc}</td>
-                            <td style="font-size:.8rem">
-                                <span style="background:#28a745;color:white;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:700">✅ Vistoriada</span><br>
-                                <span style="color:#555;font-size:.75rem">KM saída: <strong>${kmSaida}</strong></span><br>
-                                <span style="color:#888;font-size:.72rem">${motoristaNome}</span>
-                            </td>
-                            <td></td>
-                        </tr>`;
-                    }
                 });
 
             } catch (e) {

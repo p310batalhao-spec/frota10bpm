@@ -94,15 +94,18 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
         // ================================================================
         async function carregarMapa() {
             try {
-                const r = await fetch(`${FB_URL}/mapa_diario.json`);
-                const dados = await r.json();
+                const [rMapa, rVist] = await Promise.all([
+                    fetch(`${FB_URL}/mapa_diario.json`),
+                    fetch(`${FB_URL}/vistorias.json`)
+                ]);
+                const dados     = await rMapa.json();
+                const vistorias = await rVist.json();
                 if (dados) {
-                    // Converte o objeto do Firebase em Array incluindo o ID (chave)
                     const listaComIds = Object.keys(dados).map(key => ({
                         id: key,
                         ...dados[key]
                     })).reverse();
-                    renderizarLinhasTabela(listaComIds);
+                    renderizarLinhasTabela(listaComIds, vistorias || {});
                 } else {
                     document.getElementById('tabela-mapa').innerHTML = '';
                 }
@@ -122,8 +125,12 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
             }
 
             try {
-                const r = await fetch(`${FB_URL}/mapa_diario.json`);
-                const dados = await r.json();
+                const [rMapa, rVist] = await Promise.all([
+                    fetch(`${FB_URL}/mapa_diario.json`),
+                    fetch(`${FB_URL}/vistorias.json`)
+                ]);
+                const dados     = await rMapa.json();
+                const vistorias = await rVist.json();
 
                 if (dados) {
                     const dInicio = new Date(dataInicio + "T00:00:00");
@@ -133,8 +140,6 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                         id: key,
                         ...dados[key]
                     })).filter(item => {
-                        // Filtra por dataAgendamento (data de disponibilidade para vistoria)
-                        // Se não houver, usa a data de dataHora como fallback
                         let dataRef;
                         if (item.dataAgendamento) {
                             dataRef = new Date(item.dataAgendamento + 'T00:00:00');
@@ -149,7 +154,7 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                     if (listaFiltrada.length === 0) {
                         document.getElementById('tabela-mapa').innerHTML = '<tr><td colspan="6" style="text-align:center">Nenhum registro encontrado neste período.</td></tr>';
                     } else {
-                        renderizarLinhasTabela(listaFiltrada);
+                        renderizarLinhasTabela(listaFiltrada, vistorias || {});
                     }
                     mostrarMsg(`Busca concluída: ${listaFiltrada.length} registros.`, "ok");
                 }
@@ -191,44 +196,85 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
         // ================================================================
         // RENDERIZAR LINHAS (AUXILIAR COM BOTÃO DELETAR)
         // ================================================================
-        function renderizarLinhasTabela(lista) {
+        function renderizarLinhasTabela(lista, vistorias) {
             const corpo = document.getElementById('tabela-mapa');
             corpo.innerHTML = '';
             const hoje = hojeISO();
+
+            // Monta set de lançamentos já vistoriados (por mapaId ou PREFIXO|PLACA legado)
+            const vistoriadosMap = {}; // chave -> dados da vistoria (para exibir motorista)
+            if (vistorias) {
+                Object.values(vistorias).forEach(v => {
+                    const chave = v.mapaId || `${(v.prefixo||'').trim()}|${(v.placa||'').trim()}`;
+                    if (chave && !vistoriadosMap[chave]) {
+                        vistoriadosMap[chave] = v;
+                    }
+                });
+            }
+
             lista.forEach(item => {
-                const data = new Date(item.dataHora).toLocaleString('pt-BR');
-                const agendada = item.dataAgendamento || item.dataHora?.substring(0,10) || '—';
-                // Formata data agendada em pt-BR
+                const data     = new Date(item.dataHora).toLocaleString('pt-BR');
+                // Usa data local para evitar bug de fuso (ISO UTC pode virar amanhã após 21h BRT)
+                const dtLocal  = new Date(item.dataHora);
+                const dataLocalISO = `${dtLocal.getFullYear()}-${String(dtLocal.getMonth()+1).padStart(2,'0')}-${String(dtLocal.getDate()).padStart(2,'0')}`;
+                const agendada = item.dataAgendamento || dataLocalISO || '—';
                 const agendadaExib = agendada !== '—'
                     ? agendada.split('-').reverse().join('/')
                     : '—';
-                // Janela de disponibilidade:
-                // - Se agendado: disponivel durante o dia inteiro da data agendada (00:00 ate 23:59).
-                // - Se nao agendado: dataAgendamento = hojeISO() no momento do lancamento,
-                //   entao fica disponivel o dia todo de hoje.
-                // Badge reflete o estado atual comparando com hoje.
-                const isHoje = agendada === hoje;
-                const isFutura = agendada > hoje;
-                const isEncerrada = agendada < hoje;
-                const badgeColor = isFutura ? '#e67e22' : (isHoje ? '#28a745' : '#6c757d');
-                const badgeLabel = isFutura ? 'Agendada' : (isHoje ? 'Disponível' : 'Encerrada');
+
+                const isHoje    = agendada === hoje;
+                const isFutura  = agendada > hoje;
+
+                // Verifica se este lançamento já foi vistoriado
+                // Para fallback PREFIXO|PLACA: só conta como vistoriado se a vistoria
+                // foi feita no mesmo dia do agendamento (evita marcar lançamentos
+                // futuros da mesma viatura como vistoriados)
+                const chaveLeg   = `${(item.prefixo||'').trim()}|${(item.placa||'').trim()}`;
+                const vistoriaExata = vistoriadosMap[item.id];
+                const vistoriaLeg   = vistoriadosMap[chaveLeg];
+                // Para legado: só usa se a vistoria foi feita no mesmo dia do lançamento
+                const vistoriaLegValida = vistoriaLeg && vistoriaLeg.dataHora
+                    ? vistoriaLeg.dataHora.substring(0,10) === agendada
+                    : false;
+                const vDados     = vistoriaExata || (vistoriaLegValida ? vistoriaLeg : null);
+                const vistoriada = !!vDados;
+
+                // Badge: Vistoriada > Disponível > Agendada > Encerrada
+                let badgeColor, badgeLabel, badgeExtra = '';
+                if (vistoriada) {
+                    badgeColor = '#1a6b3a';
+                    badgeLabel = '✅ Vistoriada';
+                    const motorista = vDados.nomeCivil || vDados.motorista || '';
+                    if (motorista) badgeExtra = `<br><span style="font-size:0.72rem;color:#555">${motorista}</span>`;
+                } else if (isFutura) {
+                    badgeColor = '#e67e22';
+                    badgeLabel = 'Agendada';
+                } else if (isHoje) {
+                    badgeColor = '#28a745';
+                    badgeLabel = 'Disponível';
+                } else {
+                    badgeColor = '#6c757d';
+                    badgeLabel = 'Encerrada';
+                }
+
                 corpo.innerHTML += `
-            <tr>
+            <tr${vistoriada ? ' style="background:rgba(26,107,58,.05)"' : ''}>
                 <td><span class="tag-guarnicao">${item.guarnicao}</span></td>
                 <td><strong>${item.prefixo}</strong> - ${item.modelo}</td>
                 <td>${item.placa}</td>
                 <td>${data}</td>
                 <td>
-                    <span style="display:inline-block;background:${badgeColor};color:white;padding:2px 7px;border-radius:4px;font-size:0.75rem;font-weight:bold;margin-bottom:3px">${badgeLabel}</span><br>
-                    <span style="font-size:0.85rem">${agendadaExib}</span>
+                    <span style="display:inline-block;background:${badgeColor};color:white;padding:2px 7px;border-radius:4px;font-size:0.75rem;font-weight:bold;margin-bottom:3px">${badgeLabel}</span>
+                    ${badgeExtra}
+                    <br><span style="font-size:0.85rem">${agendadaExib}</span>
                 </td>
-                <td>${item.criadoPor}</td>
+                <td>${item.criadoPor || item.responsavel || '—'}</td>
                 <td class="no-print" style="text-align:center">
                     <button onclick="deletarLancamento('${item.id}')" style="background:none; border:none; color:var(--cor-danger); cursor:pointer;">
                         <span class="material-icons">delete</span>
                     </button>
                 </td>
-            </tr>`; 
+            </tr>`;
             });
         }
 
