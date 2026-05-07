@@ -237,6 +237,33 @@
             <!-- Título visível apenas na impressão -->
             <div class="print-titulo-mapa">Mapa Diário de Distribuição de Viaturas</div>
 
+            <!-- FILTROS DA TABELA -->
+            <div class="no-print" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+                <input type="text" id="filtro-guarnicao"
+                    placeholder="🔍 Filtrar por guarnição..."
+                    oninput="filtrarTabelaLocal()"
+                    style="padding:8px 12px;border:1px solid #ccc;border-radius:6px;font-size:.85rem;flex:1;min-width:180px">
+                <input type="text" id="filtro-viatura"
+                    placeholder="🚗 Prefixo ou placa..."
+                    oninput="filtrarTabelaLocal()"
+                    style="padding:8px 12px;border:1px solid #ccc;border-radius:6px;font-size:.85rem;flex:1;min-width:150px">
+                <select id="filtro-status-vistoria"
+                    onchange="filtrarTabelaLocal()"
+                    style="padding:8px 12px;border:1px solid #ccc;border-radius:6px;font-size:.85rem;min-width:160px">
+                    <option value="">Todos os status</option>
+                    <option value="Disponível">Disponível</option>
+                    <option value="Vistoriada">Vistoriada</option>
+                    <option value="Agendada">Agendada</option>
+                    <option value="Encerrada">Encerrada</option>
+                </select>
+                <button onclick="limparFiltrosTabela()"
+                    style="padding:8px 14px;background:#6c757d;color:white;border:none;border-radius:6px;font-size:.82rem;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px">
+                    <span class="material-icons" style="font-size:.95rem">filter_alt_off</span>
+                    Limpar
+                </button>
+                <span id="contador-filtro" style="font-size:.78rem;color:#888;white-space:nowrap"></span>
+            </div>
+
             <div class="table-container">
                 <table>
                     <thead>

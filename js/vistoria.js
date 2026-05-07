@@ -204,23 +204,21 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
         // Se a data de referência não for hoje, o item não aparece.
         // ================================================================
         function dentroJanelaVisibilidade(item) {
-            const agora = new Date();
-            const hoje  = hojeISO();
-
+            const hoje = hojeISO();
             if (item.dataAgendamento) {
-                // Exibe se o agendamento for para hoje
+                // Exibe somente se agendado para hoje
                 return item.dataAgendamento === hoje;
             } else {
-                // Converte ISO UTC para data LOCAL (getDate evita bug de fuso após 21h BRT)
-                const lancamento = new Date(item.dataHora);
-                const dataLanc   = `${lancamento.getFullYear()}-${String(lancamento.getMonth()+1).padStart(2,'0')}-${String(lancamento.getDate()).padStart(2,'0')}`;
+                // Usa data LOCAL do dataHora (evita bug de fuso UTC após 21h BRT)
+                const d = new Date(item.dataHora);
+                const dataLanc = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
                 return dataLanc === hoje;
             }
         }
 
         async function carregarMapaDoDia() {
             const corpo = document.getElementById('tabela-mapa');
-            corpo.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:#aaa">Carregando...</td></tr>';
+            corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#aaa">Carregando...</td></tr>';
 
             try {
                 // ── 1. Busca mapa e vistorias em paralelo ──
@@ -235,7 +233,7 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 corpo.innerHTML = '';
 
                 if (!dadosMapa) {
-                    corpo.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px">Nenhuma guarnição lançada para hoje.</td></tr>';
+                    corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Nenhuma guarnição lançada para hoje.</td></tr>';
                     return;
                 }
 
@@ -247,14 +245,12 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
 
                 if (dadosVistorias) {
                     Object.values(dadosVistorias).forEach(v => {
+                        // Usa APENAS mapaId como chave.
+                        // O fallback PREFIXO|PLACA foi removido pois causava que
+                        // múltiplos lançamentos da mesma viatura (ex: várias FTs)
+                        // fossem incorretamente marcados como vistoriados.
                         if (v.mapaId) {
                             jaVistoriados.add(v.mapaId);
-                        } else {
-                            // Legado: só conta se a vistoria foi feita hoje
-                            const dataVist = v.dataHora ? v.dataHora.substring(0, 10) : '';
-                            if (dataVist === hoje) {
-                                jaVistoriados.add(`${(v.prefixo||'').trim()}|${(v.placa||'').trim()}`);
-                            }
                         }
                     });
                 }
@@ -269,49 +265,27 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 });
 
                 if (visiveis.length === 0) {
-                    corpo.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px">Nenhuma guarnição disponível para vistoria no momento.</td></tr>';
+                    corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Nenhuma guarnição disponível para vistoria no momento.</td></tr>';
                     return;
                 }
 
                 // ── 4. Separa pendentes vs. já vistoriadas ──
-                const pendentes  = visiveis.filter(item =>
-                    !jaVistoriados.has(item.id) &&
-                    !jaVistoriados.has(`${(item.prefixo||'').trim()}|${(item.placa||'').trim()}`)
-                );
-                const concluidas = visiveis.filter(item =>
-                    jaVistoriados.has(item.id) ||
-                    jaVistoriados.has(`${(item.prefixo||'').trim()}|${(item.placa||'').trim()}`)
-                );
+                // Usa item.id (= mapaId do lançamento) como chave exclusiva.
+                // Cada lançamento é independente — mesma viatura pode aparecer várias vezes.
+                const pendentes  = visiveis.filter(item => !jaVistoriados.has(item.id));
+                const concluidas = visiveis.filter(item =>  jaVistoriados.has(item.id));
 
                 // ── 5. Contador no topo ──
                 const totalMsg = document.querySelector('.instrucao p');
-                if (totalMsg) {
-                    totalMsg.innerHTML =
-                        `Pendentes: <strong>${pendentes.length}</strong> &nbsp;|&nbsp; ` +
-                        `Vistoriadas hoje: <strong style="color:#c8ff9a">${concluidas.length}</strong> &nbsp;|&nbsp; ` +
-                        `Total do dia: <strong>${visiveis.length}</strong>`;
-                }
+                totalMsg.innerHTML =
+                    `Pendentes: <strong>${pendentes.length}</strong> &nbsp;|&nbsp; ` +
+                    `Concluídas: <strong style="color:#c8ff9a">${concluidas.length}</strong> &nbsp;|&nbsp; ` +
+                    `Total visível: <strong>${visiveis.length}</strong>`;
 
-                // ── 6. Mapas rápidos de lookup para dados da vistoria ──
-                const vistoriasPorMapaId = {};
-                const vistoriasPorChave  = {};
-                if (dadosVistorias) {
-                    Object.entries(dadosVistorias).forEach(([vid, v]) => {
-                        if (v.mapaId) {
-                            vistoriasPorMapaId[v.mapaId] = { vistoriaId: vid, ...v };
-                        } else {
-                            const dataVist = v.dataHora ? v.dataHora.substring(0, 10) : '';
-                            if (dataVist === hoje) {
-                                vistoriasPorChave[`${(v.prefixo||'').trim()}|${(v.placa||'').trim()}`] = { vistoriaId: vid, ...v };
-                            }
-                        }
-                    });
-                }
-
-                // ── 7. Renderiza apenas pendentes ──
-                // Viaturas já vistoriadas saem da tela automaticamente.
+                // ── 6. Renderiza apenas pendentes — vistoriadas saem da tela ──
                 if (pendentes.length === 0) {
-                    corpo.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:28px">' +
+                    corpo.innerHTML =
+                        '<tr><td colspan="5" style="text-align:center;padding:32px">' +
                         '<span class="material-icons" style="font-size:2.5rem;color:#28a745;display:block;margin-bottom:8px">check_circle</span>' +
                         '<strong style="color:#28a745">Todas as viaturas do dia já foram vistoriadas! ✅</strong>' +
                         '</td></tr>';
@@ -342,7 +316,7 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
             } catch (e) {
                 console.error(e);
                 document.getElementById('tabela-mapa').innerHTML =
-                    '<tr><td colspan="4" style="text-align:center;color:red;padding:20px">Erro ao carregar dados. Verifique a conexão.</td></tr>';
+                    '<tr><td colspan="5" style="text-align:center;color:red;padding:20px">Erro ao carregar dados. Verifique a conexão.</td></tr>';
             }
         }
 

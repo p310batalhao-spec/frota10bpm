@@ -285,3 +285,56 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
         window.addEventListener('afterprint', function() {
             document.querySelectorAll('.no-print').forEach(el => el.style.display = '');
         });
+        // ================================================================
+        // FILTRO LOCAL DA TABELA (sem nova busca no Firebase)
+        // Filtra as linhas já renderizadas por guarnição, viatura/placa e status
+        // ================================================================
+        function filtrarTabelaLocal() {
+            const txtGuarnicao = (document.getElementById('filtro-guarnicao')?.value || '').toLowerCase().trim();
+            const txtViatura   = (document.getElementById('filtro-viatura')?.value   || '').toLowerCase().trim();
+            const status       = (document.getElementById('filtro-status-vistoria')?.value || '').toLowerCase().trim();
+
+            const linhas = document.querySelectorAll('#tabela-mapa tr');
+            let visiveis = 0;
+
+            linhas.forEach(tr => {
+                const cells = tr.querySelectorAll('td');
+                if (cells.length < 4) { tr.style.display = ''; return; }
+
+                const guarnicao = (cells[0].textContent || '').toLowerCase();
+                const viatura   = (cells[1].textContent || '').toLowerCase();
+                const placa     = (cells[2].textContent || '').toLowerCase();
+                // Badge de status fica na coluna 4 (índice 4)
+                const badgeEl   = cells[4]?.querySelector('span[style*="border-radius"]');
+                const badgeText = (badgeEl?.textContent || '').toLowerCase().trim();
+
+                const okGuarnicao = !txtGuarnicao || guarnicao.includes(txtGuarnicao);
+                const okViatura   = !txtViatura   || viatura.includes(txtViatura) || placa.includes(txtViatura);
+                const okStatus    = !status        || badgeText.includes(status.toLowerCase());
+
+                if (okGuarnicao && okViatura && okStatus) {
+                    tr.style.display = '';
+                    visiveis++;
+                } else {
+                    tr.style.display = 'none';
+                }
+            });
+
+            const contador = document.getElementById('contador-filtro');
+            if (contador) {
+                const total = linhas.length;
+                contador.textContent = (txtGuarnicao || txtViatura || status)
+                    ? `${visiveis} de ${total} registro(s)`
+                    : '';
+            }
+        }
+
+        function limparFiltrosTabela() {
+            const g = document.getElementById('filtro-guarnicao');
+            const v = document.getElementById('filtro-viatura');
+            const s = document.getElementById('filtro-status-vistoria');
+            if (g) g.value = '';
+            if (v) v.value = '';
+            if (s) s.value = '';
+            filtrarTabelaLocal();
+        }
