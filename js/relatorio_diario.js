@@ -134,7 +134,7 @@
             if (g.includes('MARIBONDO')) return 'MARIBONDO';
             if (g.includes('IGACI')) return 'IGACI';
             if (g.includes('CACIMBINHAS')) return 'CACIMBINHAS';
-            if (g.includes('ESTRELA')) return 'ESTRELA / MINADOR DO NEGRÃO';
+            if (g.includes('ESTRELA')) return 'ESTRELA / MINADOR';
             if (g.includes('BELÉM') || g.includes('TANQUE')) return 'BELÉM / TANQUE D\'ARCA';
             if (g.includes('QUEBRANGULO')) return 'QUEBRANGULO';
             if (g.includes('JACINTO') || g.includes('VERMELHO')) return 'P. JACINTO / MAR. VERMELHO';

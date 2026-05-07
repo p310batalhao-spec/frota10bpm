@@ -39,13 +39,13 @@
                         <th>Guarnição</th>
                         <th>Viatura</th>
                         <th>Placa</th>
+                        <th>Lançado em</th>
                         <th>Situação / KM Saída</th>
-                        <th>Devolução / KM Retorno</th>
                         <th>Ação</th>
                     </tr>
                 </thead>
                 <tbody id="tabela-mapa">
-                    </tbody>
+                </tbody>
             </table>
         </div>
     </main>
@@ -104,7 +104,7 @@
                     <input type="text" id="v-motorista" readonly style="background:#f0f4ff;font-weight:700"
                            placeholder="(preenchido automaticamente)">
                 </div>
-                <!-- Campo oculto para guardar o ID Firebase do motorista -->
+                <!-- Campos ocultos -->
                 <input type="hidden" id="v-motorista-id">
                 <input type="hidden" id="v-cpf-confirmado">
 
@@ -230,9 +230,8 @@
                         <option value="Outro">Outro</option>
                     </select>
                     <input type="text" name="v-carroceria-outro" id="v-carroceria-outro" placeholder="Especifique...">
-
                 </div>
-                
+
                 <div class="form-group">
                     <label>Pneus e estepe</label>
                     <select id="v-pneus">
@@ -242,7 +241,7 @@
                     </select>
                     <input type="text" name="v-pneus-outro" id="v-pneus-outro" placeholder="Especifique...">
                 </div>
-                
+
                 <div class="form-group">
                     <label>Estofados, forração e tapetes</label>
                     <select id="v-estofados">
@@ -334,66 +333,11 @@
     </div>
 
     <footer>
-            <p>Sistema de Controle de Frotas - 10º BPM</p>
-            <p>&copy; 2023 10º BPM. Todos os direitos reservados.</p>
+        <p>Sistema de Controle de Frotas - 10º BPM</p>
+        <p>&copy; 2023 10º BPM. Todos os direitos reservados.</p>
     </footer>
 
-<script src="../js/vistoria.js"></script>
-
-    <!-- MODAL DEVOLUCAO -->
-    <div id="modalDevolucao" class="modal">
-        <div class="modal-content">
-            <span class="material-icons fechar-modal" onclick="fecharModalDevolucao()">close</span>
-            <h2>Devolução de Viatura</h2>
-            <hr><br>
-
-            <div class="form-grid" style="flex:1">
-                <div class="form-group">
-                    <label>Prefixo</label>
-                    <input type="text" id="dev-prefixo" readonly style="background:#f9f9f9">
-                </div>
-                <div class="form-group">
-                    <label>Placa</label>
-                    <input type="text" id="dev-placa" readonly style="background:#f9f9f9">
-                </div>
-                <div class="form-group full">
-                    <label>Guarnição</label>
-                    <input type="text" id="dev-guarnicao" readonly style="background:#f9f9f9">
-                </div>
-                <div class="form-group full">
-                    <label>Condutor</label>
-                    <input type="text" id="dev-motorista" readonly style="background:#f9f9f9">
-                </div>
-
-                <div class="section-title">Hodômetro de Retorno</div>
-
-                <div class="form-group">
-                    <label>KM de Saída</label>
-                    <input type="number" id="dev-km-saida" readonly style="background:#f9f9f9;font-weight:700">
-                </div>
-                <div class="form-group">
-                    <label>KM de Retorno <span style="color:#dc3545">*</span></label>
-                    <input type="number" id="dev-km-retorno" placeholder="Ex: 125430" min="0"
-                        onkeydown="if(event.key==='Enter') salvarDevolucao()">
-                </div>
-                <div class="form-group full">
-                    <label>Observações do Retorno</label>
-                    <textarea id="dev-obs" rows="3"
-                        placeholder="Ocorrências durante a patrulha, avarias, etc..."></textarea>
-                </div>
-            </div>
-
-            <p id="dev-msg" style="font-size:.85rem;min-height:18px;font-weight:600;margin-top:8px;color:#dc3545"></p>
-
-            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;padding-bottom:4px;flex-shrink:0">
-                <button type="button" class="btn-cancelar-vistoria" onclick="fecharModalDevolucao()">Cancelar</button>
-                <button type="button" class="btn-submit" onclick="salvarDevolucao()">
-                    <span class="material-icons" style="font-size:1.1rem;vertical-align:middle;margin-right:4px">check_circle</span>
-                    CONFIRMAR DEVOLUÇÃO
-                </button>
-            </div>
-        </div>
-    </div>
+    <script src="../js/vistoria.js"></script>
 
 </body>
 </html>

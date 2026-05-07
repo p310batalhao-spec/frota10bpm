@@ -22,12 +22,10 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
             if (cpfDigitado.length < 11) {
                 statusEl.style.color = '#888';
                 statusEl.textContent = cpfDigitado.length > 0 ? `⏳ ${cpfDigitado.length}/11 dígitos...` : '';
-                return; // não limpa campos enquanto usuário está digitando
+                return;
             }
 
-            // Normaliza com zeros à esquerda (Excel às vezes corta o zero inicial)
             const cpfRaw = cpfDigitado.padStart(11, '0');
-
             statusEl.style.color = '#555';
             statusEl.textContent = '🔎 Buscando...';
 
@@ -39,8 +37,6 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                     return;
                 }
 
-                // Normaliza CPF: remove não-dígitos e completa com zeros à esquerda até 11 dígitos
-                // CPFs no Firebase são sempre salvos com padStart(11,'0')
                 const normCPF = v => String(v ?? '').replace(/\D/g,'').padStart(11, '0');
 
                 const encontrado = Object.entries(dados).find(([, m]) => {
@@ -61,20 +57,16 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 const [id, m] = encontrado;
                 motoristaAtual = { id, ...m };
 
-                // Preenche campos readonly
-                document.getElementById('v-posto').value             = m.posto      || '';
-                document.getElementById('v-matricula').value         = m.matricula  || '';
-                document.getElementById('v-motorista').value         = m.nomeCivil  || m.nomeGuerra || m.nome || m.Nome || '';
-                document.getElementById('v-motorista-id').value      = id;
-                document.getElementById('v-cpf-confirmado').value    = cpfRaw;
-
-                // Pré-preenche CPF da assinatura com o mesmo valor digitado
-                document.getElementById('ass-cpf').value = document.getElementById('v-cpf').value;
+                document.getElementById('v-posto').value          = m.posto      || '';
+                document.getElementById('v-matricula').value      = m.matricula  || '';
+                document.getElementById('v-motorista').value      = m.nomeCivil  || m.nomeGuerra || m.nome || m.Nome || '';
+                document.getElementById('v-motorista-id').value   = id;
+                document.getElementById('v-cpf-confirmado').value = cpfRaw;
+                document.getElementById('ass-cpf').value          = document.getElementById('v-cpf').value;
 
                 statusEl.style.color = '#28a745';
                 statusEl.textContent = `✅ ${m.posto || ''} ${m.nomeCivil || m.nomeGuerra || ''} — Mat: ${m.matricula || '—'}`;
 
-                // Limpa assinatura anterior se havia outro motorista
                 resetarAssinatura();
 
             } catch(e) {
@@ -105,10 +97,9 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
         }
 
         async function confirmarAssinaturaEletronica() {
-            const cpfAss = document.getElementById('ass-cpf').value.replace(/\D/g,'').padStart(11,'0');
-            // Senha = CPF (campo ass-senha reutilizado como confirmação do CPF)
+            const cpfAss   = document.getElementById('ass-cpf').value.replace(/\D/g,'').padStart(11,'0');
             const senhaAss = document.getElementById('ass-senha').value.replace(/\D/g,'').padStart(11,'0');
-            const msgEl  = document.getElementById('ass-msg');
+            const msgEl    = document.getElementById('ass-msg');
 
             if (!cpfAss || cpfAss.length < 11) {
                 msgEl.style.color = '#dc3545';
@@ -126,7 +117,6 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 return;
             }
 
-            // Verifica se o CPF bate com o condutor já identificado
             const cpfCondutor = document.getElementById('v-cpf-confirmado').value.replace(/\D/g,'').padStart(11,'0');
             if (cpfCondutor && cpfAss !== cpfCondutor) {
                 msgEl.style.color = '#dc3545';
@@ -138,7 +128,6 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
             msgEl.textContent = '🔎 Verificando...';
 
             try {
-                // Autentica diretamente contra /motoristas — senha = CPF
                 const normCPF = v => String(v || '').replace(/\D/g,'').padStart(11,'0');
 
                 if (!motoristaAtual) {
@@ -147,7 +136,6 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                     return;
                 }
 
-                // Confirma que o CPF informado bate com o motorista carregado (ambos com padStart)
                 if (normCPF(motoristaAtual.cpf) !== normCPF(cpfAss)) {
                     msgEl.style.color = '#dc3545';
                     msgEl.textContent = '❌ CPF não corresponde ao condutor identificado.';
@@ -155,10 +143,9 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                     return;
                 }
 
-                // Autenticação OK — monta os dados da assinatura
-                const agora = new Date();
+                const agora   = new Date();
                 const horaStr = agora.toLocaleString('pt-BR');
-                const m = motoristaAtual;
+                const m       = motoristaAtual;
 
                 assinaturaDados = {
                     nomeCivil:        m.nomeCivil  || m.nomeGuerra || '',
@@ -172,7 +159,6 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
 
                 assinaturaConfirmada = true;
 
-                // Exibe badge de confirmação
                 const nomeFull = `${assinaturaDados.posto} ${assinaturaDados.nomeCivil || assinaturaDados.nomeGuerra}`.trim();
                 document.getElementById('ass-nome-exibido').textContent = nomeFull;
                 document.getElementById('ass-dados-exibidos').textContent =
@@ -186,7 +172,8 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
 
             } catch(e) {
                 console.error(e);
-                msgEl.style.color = 'red'; msgEl.textContent = 'Erro ao verificar. Verifique a conexão.';
+                msgEl.style.color = 'red';
+                msgEl.textContent = 'Erro ao verificar. Verifique a conexão.';
             }
         }
 
@@ -200,18 +187,59 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
             carregarMapaDoDia();
         };
 
+        // ================================================================
+        // REGRA DE VISIBILIDADE
+        //
+        // Só aparecem lançamentos cuja data de referência seja HOJE:
+        //
+        // Lançamento COM agendamento (dataAgendamento):
+        //   data de referência = dataAgendamento.
+        //   Visível das 00:00 às 09:00 do dia seguinte.
+        //
+        // Lançamento SEM agendamento:
+        //   data de referência = data local do dataHora.
+        //   Visível a partir do momento do lançamento até às 09:00
+        //   do dia seguinte.
+        //
+        // Se a data de referência não for hoje, o item não aparece.
+        // ================================================================
+        function dentroJanelaVisibilidade(item) {
+            const agora = new Date();
+            const hoje  = hojeISO();
+
+            if (item.dataAgendamento) {
+                // Só exibe se o agendamento for para hoje
+                if (item.dataAgendamento !== hoje) return false;
+                // Janela: 00:00 de hoje até 09:00 de amanhã
+                const fim = new Date(hoje + 'T00:00:00');
+                fim.setDate(fim.getDate() + 1);
+                fim.setHours(9, 0, 0, 0);
+                return agora < fim;
+            } else {
+                // Só exibe se o lançamento foi feito hoje (data local)
+                const lancamento = new Date(item.dataHora);
+                const dataLanc   = `${lancamento.getFullYear()}-${String(lancamento.getMonth()+1).padStart(2,'0')}-${String(lancamento.getDate()).padStart(2,'0')}`;
+                if (dataLanc !== hoje) return false;
+                // Janela: a partir do momento do lançamento até 09:00 de amanhã
+                const fim = new Date(hoje + 'T00:00:00');
+                fim.setDate(fim.getDate() + 1);
+                fim.setHours(9, 0, 0, 0);
+                return agora >= lancamento && agora < fim;
+            }
+        }
+
         async function carregarMapaDoDia() {
             const corpo = document.getElementById('tabela-mapa');
             corpo.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:#aaa">Carregando...</td></tr>';
 
             try {
-                // ── 1. Busca o mapa do dia e as vistorias em paralelo ──
+                // ── 1. Busca mapa e vistorias em paralelo ──
                 const [rMapa, rVist] = await Promise.all([
                     fetch(`${FB_URL}/mapa_diario.json`),
                     fetch(`${FB_URL}/vistorias.json`)
                 ]);
 
-                const dadosMapa     = await rMapa.json();
+                const dadosMapa      = await rMapa.json();
                 const dadosVistorias = await rVist.json();
 
                 corpo.innerHTML = '';
@@ -221,88 +249,84 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                     return;
                 }
 
+                // ── 2. Monta o Set de lançamentos já vistoriados ──
+                // Usa mapaId como chave exata; fallback PREFIXO|PLACA apenas para
+                // vistorias legadas (sem mapaId) registradas hoje.
                 const hoje = hojeISO();
-
-                // ── 2. Monta o Set de IDs de lançamentos já vistoriados ──
-                // Chave: mapaId (ID unico do lancamento no Firebase).
-                // Isso permite que a MESMA viatura seja lançada e vistoriada
-                // multiplas vezes no mesmo dia (rodeizio entre guarnicoes).
                 const jaVistoriados = new Set();
 
                 if (dadosVistorias) {
                     Object.values(dadosVistorias).forEach(v => {
-                        // Se a vistoria tem mapaId, usa ele como chave unica.
-                        // Fallback legado: PREFIXO|PLACA para vistorias antigas
-                        // sem mapaId (registradas antes desta correcao).
                         if (v.mapaId) {
                             jaVistoriados.add(v.mapaId);
-                        } else if (v.dataHora && v.dataHora.startsWith(hoje)) {
-                            jaVistoriados.add(`${(v.prefixo||'').trim()}|${(v.placa||'').trim()}`);
+                        } else {
+                            // Legado: só conta se a vistoria foi feita hoje
+                            const dataVist = v.dataHora ? v.dataHora.substring(0, 10) : '';
+                            if (dataVist === hoje) {
+                                jaVistoriados.add(`${(v.prefixo||'').trim()}|${(v.placa||'').trim()}`);
+                            }
                         }
                     });
                 }
 
-                // ── 3. Filtra guarnições do dia atual ──
-                const listaDoDia = Object.keys(dadosMapa)
-                    .map(id => ({ id, ...dadosMapa[id] }))
-                    .filter(item => {
-                        if (!item.dataHora) return false;
-                        // Prioriza dataAgendamento se existir, senão usa dataHora
-                        let dataItem;
-                        if (item.dataAgendamento) {
-                            dataItem = item.dataAgendamento; // já está em AAAA-MM-DD
-                        } else {
-                            // fallback: converte ISO UTC para data LOCAL (BRT)
-                            // Sem isso lancamentos apos 21h aparecem como amanha
-                            const dtLocal = new Date(item.dataHora);
-                            dataItem = `${dtLocal.getFullYear()}-${String(dtLocal.getMonth()+1).padStart(2,'0')}-${String(dtLocal.getDate()).padStart(2,'0')}`;
-                        }
-                        return dataItem === hoje;
-                    });
+                // ── 3. Filtra lançamentos dentro da janela de visibilidade ──
+                const todosItens = Object.keys(dadosMapa)
+                    .map(id => ({ id, ...dadosMapa[id] }));
 
-                if (listaDoDia.length === 0) {
-                    corpo.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px">Nenhuma guarnição lançada para hoje.</td></tr>';
+                const visiveis = todosItens.filter(item => {
+                    if (!item.dataHora) return false;
+                    return dentroJanelaVisibilidade(item);
+                });
+
+                if (visiveis.length === 0) {
+                    corpo.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px">Nenhuma guarnição disponível para vistoria no momento.</td></tr>';
                     return;
                 }
 
-                // ── 4. Separa: pendentes vs. já vistoriadas ──
-                // Usa mapaId como chave: cada lancamento e independente,
-                // permitindo que a mesma viatura apareça multiplas vezes.
-                const pendentes    = listaDoDia.filter(item =>
+                // ── 4. Separa pendentes vs. já vistoriadas ──
+                const pendentes  = visiveis.filter(item =>
                     !jaVistoriados.has(item.id) &&
                     !jaVistoriados.has(`${(item.prefixo||'').trim()}|${(item.placa||'').trim()}`)
                 );
-                const concluidas   = listaDoDia.filter(item =>
+                const concluidas = visiveis.filter(item =>
                     jaVistoriados.has(item.id) ||
                     jaVistoriados.has(`${(item.prefixo||'').trim()}|${(item.placa||'').trim()}`)
                 );
 
-                // ── 5. Exibe o contador no topo ──
+                // ── 5. Contador no topo ──
                 const totalMsg = document.querySelector('.instrucao p');
                 totalMsg.innerHTML =
                     `Pendentes: <strong>${pendentes.length}</strong> &nbsp;|&nbsp; ` +
-                    `Concluídas hoje: <strong style="color:#c8ff9a">${concluidas.length}</strong> &nbsp;|&nbsp; ` +
-                    `Total do dia: <strong>${listaDoDia.length}</strong>`;
+                    `Concluídas: <strong style="color:#c8ff9a">${concluidas.length}</strong> &nbsp;|&nbsp; ` +
+                    `Total visível: <strong>${visiveis.length}</strong>`;
 
-                // -- 6. Renderiza TODAS as linhas (pendentes + vistoriadas)
-                // Mapas rapidos para lookup de dados de vistoria por lancamento
+                // ── 6. Mapas rápidos de lookup para dados da vistoria ──
                 const vistoriasPorMapaId = {};
                 const vistoriasPorChave  = {};
                 if (dadosVistorias) {
                     Object.entries(dadosVistorias).forEach(([vid, v]) => {
-                        if (v.mapaId) vistoriasPorMapaId[v.mapaId] = { vistoriaId: vid, ...v };
-                        else if (v.dataHora && v.dataHora.startsWith(hoje))
-                            vistoriasPorChave[`${(v.prefixo||'').trim()}|${(v.placa||'').trim()}`] = { vistoriaId: vid, ...v };
+                        if (v.mapaId) {
+                            vistoriasPorMapaId[v.mapaId] = { vistoriaId: vid, ...v };
+                        } else {
+                            const dataVist = v.dataHora ? v.dataHora.substring(0, 10) : '';
+                            if (dataVist === hoje) {
+                                vistoriasPorChave[`${(v.prefixo||'').trim()}|${(v.placa||'').trim()}`] = { vistoriaId: vid, ...v };
+                            }
+                        }
                     });
                 }
 
+                // ── 7. Renderiza linhas (pendentes primeiro, concluídas depois) ──
                 window._mapaItens = {};
-                // Pendentes primeiro, vistoriadas depois
                 [...pendentes, ...concluidas].forEach(item => {
                     window._mapaItens[item.id] = item;
                     const isPendente = pendentes.includes(item);
-                    const vDados = vistoriasPorMapaId[item.id] ||
-                        vistoriasPorChave[`${(item.prefixo||'').trim()}|${(item.placa||'').trim()}`];
+                    const chaveLeg   = `${(item.prefixo||'').trim()}|${(item.placa||'').trim()}`;
+                    const vDados     = vistoriasPorMapaId[item.id] || vistoriasPorChave[chaveLeg];
+
+                    const dtLanc = item.dataHora
+                        ? new Date(item.dataHora).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
+                        : '--';
 
                     if (isPendente) {
                         corpo.innerHTML += `
@@ -310,7 +334,7 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                             <td><strong>${item.guarnicao || '--'}</strong></td>
                             <td>${item.prefixo || '--'}</td>
                             <td>${item.placa   || '--'}</td>
-                            <td>--</td>
+                            <td style="font-size:.78rem;color:#666">${dtLanc}</td>
                             <td>--</td>
                             <td>
                                 <button class="btn-vistoria"
@@ -320,27 +344,19 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                             </td>
                         </tr>`;
                     } else {
-                        const kmSaida   = vDados?.km || '--';
-                        const vId       = vDados?.vistoriaId || '';
-                        const jaDevolvida = vDados?.kmRetorno != null;
+                        const kmSaida       = vDados?.km || '--';
                         const motoristaNome = vDados?.nomeCivil || vDados?.motorista || '--';
                         corpo.innerHTML += `
                         <tr style="background:rgba(40,167,69,.06)">
                             <td><strong>${item.guarnicao || '--'}</strong></td>
                             <td>${item.prefixo || '--'}</td>
                             <td>${item.placa   || '--'}</td>
+                            <td style="font-size:.78rem;color:#666">${dtLanc}</td>
                             <td style="font-size:.8rem">
-                                <span style="background:#28a745;color:white;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:700">Vistoriada</span><br>
-                                <span style="color:#555;font-size:.75rem">KM saida: <strong>${kmSaida}</strong></span><br>
+                                <span style="background:#28a745;color:white;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:700">✅ Vistoriada</span><br>
+                                <span style="color:#555;font-size:.75rem">KM saída: <strong>${kmSaida}</strong></span><br>
                                 <span style="color:#888;font-size:.72rem">${motoristaNome}</span>
                             </td>
-                            <td style="font-size:.8rem">${
-                                jaDevolvida
-                                ? '<span style="background:#6c757d;color:white;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:700">Devolvida</span><br><span style="color:#555;font-size:.75rem">KM retorno: <strong>' + vDados.kmRetorno + '</strong></span>'
-                                : '<button class="btn-vistoria" style="background:#c8a415;color:#1a2744;min-width:120px;display:inline-flex;align-items:center;gap:5px;font-weight:700" onclick="abrirDevolucaoPorVistoriaId(\'' + vId + '\',\'' + item.id + '\')">' +
-                                  '<span class="material-icons" style="font-size:1rem;color:#1a2744">reply</span> DEVOLVER' +
-                                  '</button>'
-                            }</td>
                             <td></td>
                         </tr>`;
                     }
@@ -353,52 +369,54 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
             }
         }
 
-        // ── Abre o modal com os dados da guarnição ──
-                // Wrapper seguro: busca dados pelo id e repassa para abrirVistoria
+        // ── Abre modal buscando item pelo ID no cache ──
         function abrirVistoriaPorId(id) {
             const item = window._mapaItens && window._mapaItens[id];
             if (!item) {
-                console.error('[Vistoria] Item nao encontrado:', id);
+                console.warn('[Vistoria] Item nao encontrado no cache, recarregando...', id);
+                carregarMapaDoDia().then(() => {
+                    const retry = window._mapaItens && window._mapaItens[id];
+                    if (retry) {
+                        abrirVistoria(retry.guarnicao || '', retry.prefixo || '', retry.placa || '', retry.id);
+                    } else {
+                        mostrarMsg('Erro ao abrir vistoria. Recarregue a página.', 'erro');
+                    }
+                });
                 return;
             }
-            // Passa o mapaId para que seja gravado junto com a vistoria
             abrirVistoria(item.guarnicao || '', item.prefixo || '', item.placa || '', item.id);
         }
 
         function abrirVistoria(guarnicao, prefixo, placa, mapaId) {
-            // Guarda o mapaId para salvar junto com a vistoria
             if (!motoristaAtual) motoristaAtual = {};
             motoristaAtual._mapaId = mapaId || null;
             document.getElementById('v-guarnicao').value = guarnicao;
-            document.getElementById('v-prefixo').value  = prefixo;
-            document.getElementById('v-placa').value    = placa;
+            document.getElementById('v-prefixo').value   = prefixo;
+            document.getElementById('v-placa').value     = placa;
             document.getElementById('modalVistoria').style.display = 'block';
         }
 
         function fecharModal() {
             document.getElementById('modalVistoria').style.display = 'none';
             document.getElementById('formVistoria').reset();
-            // Limpa estado da identificação e assinatura
-            motoristaAtual = null;
-            assinaturaConfirmada = false;
-            assinaturaDados = null;
+            motoristaAtual        = null;
+            assinaturaConfirmada  = false;
+            assinaturaDados       = null;
             document.getElementById('v-cpf-status').textContent = '';
             document.getElementById('assinatura-confirmada').style.display = 'none';
             document.getElementById('ass-msg').textContent = '';
         }
 
-        // ── Submit: salva e remove a linha da tabela ──
+        // ── Submit: salva a vistoria ──
         document.getElementById('formVistoria').onsubmit = async (e) => {
             e.preventDefault();
 
-            // Valida identificação do condutor
             if (!motoristaAtual) {
                 mostrarMsg('⚠️ Identifique o condutor pelo CPF antes de continuar.', 'erro');
                 document.getElementById('v-cpf').focus();
                 return;
             }
 
-            // Valida assinatura eletrônica
             if (!assinaturaConfirmada || !assinaturaDados) {
                 mostrarMsg('⚠️ A assinatura eletrônica é obrigatória! Confirme com CPF e senha.', 'erro');
                 document.getElementById('ass-cpf').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -406,20 +424,18 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
             }
 
             const btn = e.target.querySelector('button[type="submit"]');
-            btn.disabled = true;
+            btn.disabled    = true;
             btn.textContent = 'ENVIANDO...';
 
             const dadosVistoria = {
                 prefixo:      document.getElementById('v-prefixo').value,
                 placa:        document.getElementById('v-placa').value,
                 guarnicao:    document.getElementById('v-guarnicao').value,
-                // Dados do condutor (vindos do cadastro de motoristas)
                 posto:        assinaturaDados.posto     || document.getElementById('v-posto').value,
                 matricula:    assinaturaDados.matricula || document.getElementById('v-matricula').value,
                 motorista:    assinaturaDados.nomeGuerra,
                 nomeCivil:    assinaturaDados.nomeCivil,
                 cpf:          assinaturaDados.cpf,
-                // Checklist
                 combustivel:  document.getElementById('v-combustivel').value,
                 km:           document.getElementById('v-km').value,
                 limpeza:      document.getElementById('v-limpeza').value,
@@ -439,177 +455,47 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 radio:        document.getElementById('v-rdio').value,
                 capsula:      document.getElementById('v-capsula').value,
                 observacoes:  document.getElementById('v-obs').value,
-                // Assinatura eletrônica — armazena todos os dados identificadores
                 assinatura: {
-                    tipo:              'eletronica_cpf',
-                    nomeCivil:         assinaturaDados.nomeCivil,
-                    nomeGuerra:        assinaturaDados.nomeGuerra,
-                    posto:             assinaturaDados.posto,
-                    matricula:         assinaturaDados.matricula,
-                    cpf:               assinaturaDados.cpf,
-                    horaConfirmacao:   assinaturaDados.horaConfirmacao,
+                    tipo:            'eletronica_cpf',
+                    nomeCivil:       assinaturaDados.nomeCivil,
+                    nomeGuerra:      assinaturaDados.nomeGuerra,
+                    posto:           assinaturaDados.posto,
+                    matricula:       assinaturaDados.matricula,
+                    cpf:             assinaturaDados.cpf,
+                    horaConfirmacao: assinaturaDados.horaConfirmacao,
                 },
                 dataHora: new Date().toISOString(),
-                // mapaId: ID unico do lancamento no mapa_diario.
-                // Permite rastrear QUAL lancamento foi vistoriado,
-                // viabilizando que a mesma viatura seja vistoriada
-                // multiplas vezes no dia (um por lancamento).
-                mapaId: motoristaAtual?._mapaId || null
+                mapaId:   motoristaAtual?._mapaId || null
             };
 
             try {
                 await fetch(`${FB_URL}/vistorias.json`, {
-                    method: 'POST',
-                    body: JSON.stringify(dadosVistoria),
+                    method:  'POST',
+                    body:    JSON.stringify(dadosVistoria),
                     headers: { 'Content-Type': 'application/json' }
                 });
 
                 mostrarMsg('Vistoria registrada com sucesso! ✅', 'ok');
                 fecharModal();
-
-                // ── Recarrega a lista — a viatura recém-vistoriada não vai mais aparecer ──
                 carregarMapaDoDia();
 
             } catch (error) {
                 console.error(error);
                 mostrarMsg('Erro ao salvar vistoria. Tente novamente.', 'erro');
-                btn.disabled = false;
+                btn.disabled    = false;
                 btn.textContent = 'FINALIZAR VISTORIA E LIBERAR';
             }
         };
 
         function mostrarMsg(texto, tipo) {
             const el = document.getElementById('msg-feedback');
-            el.textContent = texto;
-            el.style.display = 'block';
+            el.textContent           = texto;
+            el.style.display         = 'block';
             el.style.backgroundColor = tipo === 'ok' ? 'var(--cor-success)' : 'var(--cor-danger)';
             setTimeout(() => el.style.display = 'none', 3500);
         }
 
-
-        // ================================================================
-        // DEVOLUCAO DE VIATURA
-        // ================================================================
-        let _devolucaoCtx = { vistoriaId: null, mapaItemId: null, vistoriaDados: null };
-
-        async function abrirDevolucaoPorVistoriaId(vistoriaId, mapaItemId) {
-            if (!vistoriaId) { mostrarMsg('Erro: ID da vistoria nao encontrado.', 'erro'); return; }
-            try {
-                const r = await fetch(`${FB_URL}/vistorias/${vistoriaId}.json`);
-                const v = await r.json();
-                if (!v) { mostrarMsg('Vistoria nao encontrada.', 'erro'); return; }
-                _devolucaoCtx = { vistoriaId, mapaItemId, vistoriaDados: v };
-                document.getElementById('dev-prefixo').value    = v.prefixo   || '';
-                document.getElementById('dev-placa').value      = v.placa     || '';
-                document.getElementById('dev-guarnicao').value  = v.guarnicao || '';
-                document.getElementById('dev-motorista').value  = v.nomeCivil || v.motorista || '';
-                document.getElementById('dev-km-saida').value   = v.km        || '';
-                document.getElementById('dev-km-retorno').value = '';
-                document.getElementById('dev-obs').value        = '';
-                document.getElementById('dev-msg').textContent  = '';
-                document.getElementById('modalDevolucao').style.display = 'flex';
-            } catch(e) {
-                console.error(e);
-                mostrarMsg('Erro ao carregar dados da vistoria.', 'erro');
-            }
-        }
-
-        function fecharModalDevolucao() {
-            document.getElementById('modalDevolucao').style.display = 'none';
-            document.getElementById('dev-km-retorno').value = '';
-            document.getElementById('dev-obs').value = '';
-            document.getElementById('dev-msg').textContent = '';
-        }
-
-        async function salvarDevolucao() {
-            const kmRetorno = parseFloat(document.getElementById('dev-km-retorno').value);
-            const kmSaida   = parseFloat(document.getElementById('dev-km-saida').value) || 0;
-            const obs       = document.getElementById('dev-obs').value.trim();
-            const msgEl     = document.getElementById('dev-msg');
-
-            if (!kmRetorno || isNaN(kmRetorno)) {
-                msgEl.style.color = '#dc3545';
-                msgEl.textContent = 'Informe o KM de retorno.';
-                return;
-            }
-            if (kmRetorno < kmSaida) {
-                msgEl.style.color = '#dc3545';
-                msgEl.textContent = `KM de retorno (${kmRetorno}) nao pode ser menor que o de saida (${kmSaida}).`;
-                return;
-            }
-            msgEl.style.color = '#555';
-            msgEl.textContent = 'Salvando...';
-
-            const agora = new Date().toISOString();
-            const v     = _devolucaoCtx.vistoriaDados;
-
-            try {
-                // 1. Atualiza a vistoria com os dados de retorno
-                await fetch(`${FB_URL}/vistorias/${_devolucaoCtx.vistoriaId}.json`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({
-                        kmRetorno,
-                        kmRodados:    kmRetorno - kmSaida,
-                        obsRetorno:   obs,
-                        dataRetorno:  agora,
-                        devolvidoPor: localStorage.getItem('frota_usuario') || 'Sistema',
-                    }),
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                // 2. Atualiza o KM atual da viatura em /viaturas
-                const viaturas = await fetch(`${FB_URL}/viaturas.json`).then(r => r.json()) || {};
-                const entrada  = Object.entries(viaturas).find(([, vt]) =>
-                    vt.placa === v.placa || vt.prefixo === v.prefixo
-                );
-                if (entrada) {
-                    const [viaturaId] = entrada;
-                    await fetch(`${FB_URL}/viaturas/${viaturaId}.json`, {
-                        method: 'PATCH',
-                        body: JSON.stringify({ kmAtual: kmRetorno, updatedAt: agora }),
-                        headers: { 'Content-Type': 'application/json' }
-                    });
-                }
-
-                // 3. Registra entrada de km no historico de manutencao
-                if (entrada) {
-                    const [viaturaId] = entrada;
-                    await fetch(`${FB_URL}/manutencao.json`, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            tipo:       'km_devolucao',
-                            descricao:  `Retorno de patrulha — ${v.guarnicao || ''}`,
-                            prefixo:    v.prefixo,
-                            placa:      v.placa,
-                            viaturaId,
-                            kmSaida,
-                            kmRetorno,
-                            kmRodados:  kmRetorno - kmSaida,
-                            motorista:  v.nomeCivil || v.motorista || '',
-                            guarnicao:  v.guarnicao || '',
-                            criadoEm:   agora,
-                            criadoPor:  localStorage.getItem('frota_usuario') || 'Sistema',
-                        }),
-                        headers: { 'Content-Type': 'application/json' }
-                    });
-                }
-
-                mostrarMsg('Devolucao registrada! KM atualizado.', 'ok');
-                fecharModalDevolucao();
-                carregarMapaDoDia();
-
-            } catch(e) {
-                console.error(e);
-                msgEl.style.color = '#dc3545';
-                msgEl.textContent = 'Erro ao salvar devolucao.';
-            }
-        }
-
-        document.getElementById('modalDevolucao').addEventListener('click', function(e) {
-            if (e.target === this) fecharModalDevolucao();
-        });
-
-        // Fecha modal APENAS ao clicar no fundo escuro do overlay
+        // Fecha modal ao clicar no fundo escuro
         document.getElementById('modalVistoria').addEventListener('click', function(e) {
             if (e.target === this) fecharModal();
         });
