@@ -144,7 +144,8 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                         if (item.dataAgendamento) {
                             dataRef = new Date(item.dataAgendamento + 'T00:00:00');
                         } else if (item.dataHora) {
-                            dataRef = new Date(item.dataHora.substring(0,10) + 'T00:00:00');
+                            const _d = new Date(item.dataHora);
+                            dataRef = new Date(`${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}T00:00:00`);
                         } else {
                             return false;
                         }
@@ -233,8 +234,13 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 const vistoriaExata = vistoriadosMap[item.id];
                 const vistoriaLeg   = vistoriadosMap[chaveLeg];
                 // Para legado: só usa se a vistoria foi feita no mesmo dia do lançamento
+                // Usa data LOCAL para evitar bug de fuso UTC após 21h BRT
                 const vistoriaLegValida = vistoriaLeg && vistoriaLeg.dataHora
-                    ? vistoriaLeg.dataHora.substring(0,10) === agendada
+                    ? (() => {
+                        const dv = new Date(vistoriaLeg.dataHora);
+                        const dvStr = `${dv.getFullYear()}-${String(dv.getMonth()+1).padStart(2,'0')}-${String(dv.getDate()).padStart(2,'0')}`;
+                        return dvStr === agendada;
+                    })()
                     : false;
                 const vDados     = vistoriaExata || (vistoriaLegValida ? vistoriaLeg : null);
                 const vistoriada = !!vDados;

@@ -205,14 +205,22 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
         // ================================================================
         function dentroJanelaVisibilidade(item) {
             const hoje = hojeISO();
+
+            // Calcula ontem (para cobrir lançamentos sem agendamento feitos no dia anterior)
+            const d0 = new Date();
+            d0.setDate(d0.getDate() - 1);
+            const ontem = `${d0.getFullYear()}-${String(d0.getMonth()+1).padStart(2,'0')}-${String(d0.getDate()).padStart(2,'0')}`;
+
             if (item.dataAgendamento) {
-                // Exibe somente se agendado para hoje
-                return item.dataAgendamento === hoje;
+                // Aparece no dia agendado
+                // Aceita também ontem: cobre lançamentos agendados para ontem mas ainda não vistoriados
+                return item.dataAgendamento === hoje || item.dataAgendamento === ontem;
             } else {
-                // Usa data LOCAL do dataHora (evita bug de fuso UTC após 21h BRT)
+                // Sem agendamento: dataAgendamento = dia do lançamento (automático no mapa)
+                // Aceita hoje e ontem para cobrir lançamentos feitos no dia anterior
                 const d = new Date(item.dataHora);
                 const dataLanc = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                return dataLanc === hoje;
+                return dataLanc === hoje || dataLanc === ontem;
             }
         }
 
@@ -241,26 +249,16 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 // Usa mapaId como chave exata; fallback PREFIXO|PLACA apenas para
                 // vistorias legadas (sem mapaId) registradas hoje.
                 const hoje = hojeISO();
-                const jaVistoriados = new Set();
-
-                // Mapeia vistorias: por mapaId (exato) e por PREFIXO|PLACA+DATA (legado)
-                // O legado só é usado quando o lançamento não tem mapaId na vistoria
-                const vistoriasPorMapaId  = new Set(); // mapaIds vistoriados
-                const vistoriasPorChaveDia = new Map(); // "PREFIXO|PLACA|DATA" -> true (legado)
+                // Mapeia vistorias APENAS por mapaId.
+                // O fallback PREFIXO|PLACA foi removido definitivamente — causava
+                // falsos positivos bloqueando lançamentos nunca vistoriados.
+                // Vistorias sem mapaId (legado) simplesmente não bloqueiam nada.
+                const vistoriasPorMapaId = new Set();
 
                 if (dadosVistorias) {
                     Object.values(dadosVistorias).forEach(v => {
                         if (v.mapaId) {
-                            // Forma exata: mapaId unico por lancamento
                             vistoriasPorMapaId.add(v.mapaId);
-                        } else if (v.prefixo && v.placa && v.dataHora) {
-                            // Legado: chave inclui a DATA da vistoria para nao bloquear
-                            // lancamentos futuros da mesma viatura (ex: FT amanha)
-                            const dataVist = new Date(v.dataHora);
-                            const dataStr  = `${dataVist.getFullYear()}-${String(dataVist.getMonth()+1).padStart(2,'0')}-${String(dataVist.getDate()).padStart(2,'0')}`;
-                            vistoriasPorChaveDia.set(
-                                `${v.prefixo.trim()}|${v.placa.trim()}|${dataStr}`, true
-                            );
                         }
                     });
                 }
@@ -284,12 +282,8 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 // A data na chave legada garante que lancamentos futuros da mesma
                 // viatura nao sejam bloqueados por uma vistoria de hoje.
                 function foiVistoriado(item) {
-                    if (vistoriasPorMapaId.has(item.id)) return true;
-                    // Legado: so aplica se o lancamento for de hoje (sem mapaId)
-                    const d = new Date(item.dataHora);
-                    const dataLanc = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                    const chave = `${(item.prefixo||'').trim()}|${(item.placa||'').trim()}|${dataLanc}`;
-                    return vistoriasPorChaveDia.has(chave);
+                    // Usa exclusivamente mapaId — chave única por lançamento
+                    return vistoriasPorMapaId.has(item.id);
                 }
 
                 const pendentes  = visiveis.filter(item => !foiVistoriado(item));
