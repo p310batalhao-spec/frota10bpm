@@ -204,23 +204,19 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
         // Se a data de referência não for hoje, o item não aparece.
         // ================================================================
         function dentroJanelaVisibilidade(item) {
+            // Regra: aparece APENAS no dia de agendamento (00:00 até 23:59).
+            // Após meia-noite do dia seguinte, some automaticamente.
             const hoje = hojeISO();
 
-            // Calcula ontem (para cobrir lançamentos sem agendamento feitos no dia anterior)
-            const d0 = new Date();
-            d0.setDate(d0.getDate() - 1);
-            const ontem = `${d0.getFullYear()}-${String(d0.getMonth()+1).padStart(2,'0')}-${String(d0.getDate()).padStart(2,'0')}`;
-
             if (item.dataAgendamento) {
-                // Aparece no dia agendado
-                // Aceita também ontem: cobre lançamentos agendados para ontem mas ainda não vistoriados
-                return item.dataAgendamento === hoje || item.dataAgendamento === ontem;
+                // Com agendamento: visível somente no dia agendado
+                return item.dataAgendamento === hoje;
             } else {
-                // Sem agendamento: dataAgendamento = dia do lançamento (automático no mapa)
-                // Aceita hoje e ontem para cobrir lançamentos feitos no dia anterior
+                // Sem agendamento: visível somente no dia em que foi lançado
+                // Usa data LOCAL (getDate) para evitar bug de fuso UTC após 21h BRT
                 const d = new Date(item.dataHora);
                 const dataLanc = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                return dataLanc === hoje || dataLanc === ontem;
+                return dataLanc === hoje;
             }
         }
 
