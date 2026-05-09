@@ -55,7 +55,10 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 }
 
                 const [id, m] = encontrado;
-                motoristaAtual = { id, ...m };
+                // Preserva o _mapaId que foi setado pelo abrirVistoria
+                // (o usuário pode buscar o CPF depois de abrir o modal)
+                const mapaIdSalvo = motoristaAtual?._mapaId || null;
+                motoristaAtual = { id, ...m, _mapaId: mapaIdSalvo };
 
                 document.getElementById('v-posto').value          = m.posto      || '';
                 document.getElementById('v-matricula').value      = m.matricula  || '';
@@ -363,8 +366,12 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
         }
 
         function abrirVistoria(guarnicao, prefixo, placa, mapaId) {
+            // Garante que _mapaId fica no objeto mesmo se motoristaAtual
+            // for sobrescrito depois pela busca de CPF
             if (!motoristaAtual) motoristaAtual = {};
             motoristaAtual._mapaId = mapaId || null;
+            // Guarda também numa variável global independente como segurança
+            window._mapaIdAtivo = mapaId || null;
             document.getElementById('v-guarnicao').value = guarnicao;
             document.getElementById('v-prefixo').value   = prefixo;
             document.getElementById('v-placa').value     = placa;
@@ -377,6 +384,7 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
             motoristaAtual        = null;
             assinaturaConfirmada  = false;
             assinaturaDados       = null;
+            window._mapaIdAtivo   = null;
             document.getElementById('v-cpf-status').textContent = '';
             document.getElementById('assinatura-confirmada').style.display = 'none';
             document.getElementById('ass-msg').textContent = '';
@@ -442,7 +450,7 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                     horaConfirmacao: assinaturaDados.horaConfirmacao,
                 },
                 dataHora: new Date().toISOString(),
-                mapaId:   motoristaAtual?._mapaId || null
+                mapaId:   motoristaAtual?._mapaId || window._mapaIdAtivo || null
             };
 
             try {

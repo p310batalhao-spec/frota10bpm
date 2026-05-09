@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correção de mapaId — Sistema de Frota</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 800px;
+            width: 100%;
+        }
+        h1 {
+            font-size: 1.4rem;
+            color: #c8a415;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            font-size: .85rem;
+            color: #8b949e;
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+        .btn {
+            background: #c8a415;
+            color: #1a2744;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: .2s;
+        }
+        .btn:hover { background: #e0b820; }
+        .btn:disabled { background: #30363d; color: #8b949e; cursor: not-allowed; }
+
+        .progress-wrap {
+            margin-top: 24px;
+            display: none;
+        }
+        .progress-bar-bg {
+            background: #21262d;
+            border-radius: 6px;
+            height: 10px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #c8a415;
+            border-radius: 6px;
+            width: 0%;
+            transition: width .3s;
+        }
+        .progress-label {
+            font-size: .78rem;
+            color: #8b949e;
+            font-family: monospace;
+        }
+
+        .log-wrap {
+            margin-top: 24px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: .75rem;
+            display: none;
+        }
+        .log-line { padding: 3px 0; border-bottom: 1px solid #161b22; }
+        .log-ok    { color: #4cc36e; }
+        .log-skip  { color: #8b949e; }
+        .log-warn  { color: #e8c04a; }
+        .log-err   { color: #f07080; }
+        .log-info  { color: #5dd5f0; }
+
+        .result-box {
+            margin-top: 20px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: .95rem;
+            display: none;
+        }
+        .result-ok   { background: rgba(40,167,69,.15); border: 1px solid #28a745; color: #4cc36e; }
+        .result-warn { background: rgba(200,164,21,.15); border: 1px solid #c8a415; color: #e8c04a; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .stat {
+            background: #21262d;
+            border-radius: 8px;
+            padding: 12px 16px;
+            text-align: center;
+        }
+        .stat-num { font-size: 1.8rem; font-weight: 700; font-family: monospace; }
+        .stat-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .5px; color: #8b949e; margin-top: 4px; }
+        .c-green { color: #4cc36e; }
+        .c-yellow { color: #e8c04a; }
+        .c-gray   { color: #8b949e; }
+        .c-red    { color: #f07080; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>
+        <span class="material-icons">build_circle</span>
+        Correção Automática de mapaId
+    </h1>
+    <p class="subtitle">
+        Esta ferramenta localiza todas as vistorias salvas <strong>sem mapaId</strong> e tenta vincular cada uma
+        ao lançamento correto no <code>mapa_diario</code> usando <strong>Prefixo + Placa + Data</strong>.<br><br>
+        Quando encontrar o par, atualiza o <code>mapaId</code> no Firebase automaticamente.
+        O processo é seguro — só faz <code>PATCH</code> em registros sem mapaId.
+        <strong style="color:#c8a415">Execute apenas uma vez.</strong>
+    </p>
+
+    <button class="btn" id="btn-iniciar" onclick="iniciarCorrecao()">
+        <span class="material-icons">auto_fix_high</span>
+        Iniciar Correção Automática
+    </button>
+
+    <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-bar-bg"><div class="progress-bar" id="progress-bar"></div></div>
+        <div class="progress-label" id="progress-label">Aguardando...</div>
+    </div>
+
+    <div class="stats-grid" id="stats-grid" style="display:none">
+        <div class="stat"><div class="stat-num c-green" id="s-corrigidas">0</div><div class="stat-label">Corrigidas</div></div>
+        <div class="stat"><div class="stat-num c-yellow" id="s-nao-encontradas">0</div><div class="stat-label">Não encontradas</div></div>
+        <div class="stat"><div class="stat-num c-gray"  id="s-ja-tinham">0</div><div class="stat-label">Já tinham mapaId</div></div>
+        <div class="stat"><div class="stat-num c-red"   id="s-erros">0</div><div class="stat-label">Erros</div></div>
+    </div>
+
+    <div class="result-box" id="result-box"></div>
+
+    <div class="log-wrap" id="log-wrap"></div>
+</div>
+
+<script>
+    const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
+
+    function log(msg, tipo = 'info') {
+        const wrap = document.getElementById('log-wrap');
+        wrap.style.display = 'block';
+        const line = document.createElement('div');
+        line.className = `log-line log-${tipo}`;
+        line.textContent = `[${new Date().toLocaleTimeString('pt-BR')}] ${msg}`;
+        wrap.appendChild(line);
+        wrap.scrollTop = wrap.scrollHeight;
+    }
+
+    function setProgress(pct, label) {
+        document.getElementById('progress-bar').style.width = pct + '%';
+        document.getElementById('progress-label').textContent = label;
+    }
+
+    function dataLocalISO(isoString) {
+        // Converte ISO UTC para data local YYYY-MM-DD (evita bug de fuso após 21h BRT)
+        const d = new Date(isoString);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    async function iniciarCorrecao() {
+        const btn = document.getElementById('btn-iniciar');
+        btn.disabled = true;
+
+        document.getElementById('progress-wrap').style.display = '';
+        document.getElementById('stats-grid').style.display = '';
+
+        let corrigidas = 0, naoEncontradas = 0, jaTinham = 0, erros = 0;
+
+        const atualizarStats = () => {
+            document.getElementById('s-corrigidas').textContent     = corrigidas;
+            document.getElementById('s-nao-encontradas').textContent = naoEncontradas;
+            document.getElementById('s-ja-tinham').textContent       = jaTinham;
+            document.getElementById('s-erros').textContent           = erros;
+        };
+
+        try {
+            // ── 1. Buscar mapa_diario e vistorias ──
+            log('Buscando dados do Firebase...', 'info');
+            setProgress(5, 'Conectando ao Firebase...');
+
+            const [rMapa, rVist] = await Promise.all([
+                fetch(`${FB_URL}/mapa_diario.json`),
+                fetch(`${FB_URL}/vistorias.json`)
+            ]);
+            const mapa      = await rMapa.json();
+            const vistorias = await rVist.json();
+
+            if (!mapa) { log('mapa_diario vazio.', 'warn'); }
+            if (!vistorias) { log('Nenhuma vistoria encontrada.', 'warn'); finalizarSemDados(); return; }
+
+            const totalVist = Object.keys(vistorias).length;
+            log(`mapa_diario: ${Object.keys(mapa||{}).length} lançamentos`, 'info');
+            log(`vistorias: ${totalVist} registros`, 'info');
+            setProgress(15, 'Dados carregados. Construindo índice do mapa...');
+
+            // ── 2. Indexar mapa por PREFIXO|PLACA|DATA (data local) ──
+            // Um lançamento pode ter o mesmo prefixo+placa em dias diferentes,
+            // então a chave inclui a data para ser preciso.
+            const indiceMapa = {}; // "PREFIXO|PLACA|DATA" -> mapaId (Firebase key)
+
+            if (mapa) {
+                Object.entries(mapa).forEach(([mapaId, item]) => {
+                    if (!item.prefixo || !item.placa || !item.dataHora) return;
+                    const dataRef = item.dataAgendamento || dataLocalISO(item.dataHora);
+                    const chave   = `${item.prefixo.trim()}|${item.placa.trim()}|${dataRef}`;
+                    // Se já existe chave igual, guarda como array para resolver ambiguidade
+                    if (!indiceMapa[chave]) {
+                        indiceMapa[chave] = [mapaId];
+                    } else {
+                        indiceMapa[chave].push(mapaId);
+                    }
+                });
+            }
+
+            log(`Índice construído: ${Object.keys(indiceMapa).length} combinações únicas`, 'info');
+            setProgress(25, 'Índice pronto. Processando vistorias...');
+
+            // ── 3. Processar cada vistoria ──
+            const vistoriasArray = Object.entries(vistorias);
+            let processadas = 0;
+
+            for (const [vistId, vist] of vistoriasArray) {
+                processadas++;
+                const pct = 25 + Math.round((processadas / vistoriasArray.length) * 70);
+                setProgress(pct, `Processando ${processadas}/${vistoriasArray.length}...`);
+
+                // Já tem mapaId — pular
+                if (vist.mapaId) {
+                    jaTinham++;
+                    log(`SKIP ${vistId} — já tem mapaId: ${vist.mapaId}`, 'skip');
+                    atualizarStats();
+                    continue;
+                }
+
+                // Sem prefixo ou placa — não dá para cruzar
+                if (!vist.prefixo || !vist.placa || !vist.dataHora) {
+                    naoEncontradas++;
+                    log(`AVISO ${vistId} — sem prefixo/placa/dataHora, impossível cruzar`, 'warn');
+                    atualizarStats();
+                    continue;
+                }
+
+                // Monta chave de busca
+                const dataVist = dataLocalISO(vist.dataHora);
+                const chave    = `${vist.prefixo.trim()}|${vist.placa.trim()}|${dataVist}`;
+                const candidatos = indiceMapa[chave];
+
+                if (!candidatos || candidatos.length === 0) {
+                    naoEncontradas++;
+                    log(`NÃO ENCONTRADO ${vistId} — ${vist.guarnicao || '?'} | ${vist.prefixo}/${vist.placa} | ${dataVist}`, 'warn');
+                    atualizarStats();
+                    continue;
+                }
+
+                // Se houver múltiplos candidatos (mesma viatura lançada várias vezes no dia),
+                // escolhe o que ainda não foi vinculado a outra vistoria
+                let mapaIdEscolhido = candidatos[0];
+                if (candidatos.length > 1) {
+                    log(`AMBIGUIDADE ${vistId} — ${candidatos.length} candidatos para ${chave}, usando primeiro`, 'warn');
+                }
+
+                // Atualiza no Firebase
+                try {
+                    const resp = await fetch(`${FB_URL}/vistorias/${vistId}.json`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ mapaId: mapaIdEscolhido }),
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    if (resp.ok) {
+                        corrigidas++;
+                        log(`✅ CORRIGIDO ${vistId} — ${vist.guarnicao || '?'} ${vist.prefixo}/${vist.placa} → mapaId: ${mapaIdEscolhido}`, 'ok');
+                    } else {
+                        erros++;
+                        log(`ERRO HTTP ${resp.status} ao atualizar ${vistId}`, 'err');
+                    }
+                } catch (e) {
+                    erros++;
+                    log(`ERRO ao atualizar ${vistId}: ${e.message}`, 'err');
+                }
+
+                atualizarStats();
+
+                // Pequena pausa para não sobrecarregar o Firebase
+                await new Promise(r => setTimeout(r, 60));
+            }
+
+            setProgress(100, 'Concluído!');
+
+            // ── 4. Resultado final ──
+            const resultBox = document.getElementById('result-box');
+            resultBox.style.display = '';
+            if (erros === 0) {
+                resultBox.className = 'result-box result-ok';
+                resultBox.innerHTML = `✅ Processo concluído! ${corrigidas} vistoria(s) corrigida(s). ${naoEncontradas} não encontradas (lançamentos podem ter sido deletados do mapa). ${jaTinham} já estavam corretas.`;
+            } else {
+                resultBox.className = 'result-box result-warn';
+                resultBox.innerHTML = `⚠️ Concluído com ${erros} erro(s). ${corrigidas} corrigida(s), ${naoEncontradas} não encontradas. Verifique o log abaixo.`;
+            }
+
+            log(`─── FIM: ${corrigidas} corrigidas | ${naoEncontradas} não encontradas | ${jaTinham} já tinham | ${erros} erros ───`, 'info');
+
+        } catch (e) {
+            log(`ERRO FATAL: ${e.message}`, 'err');
+            console.error(e);
+        }
+    }
+
+    function finalizarSemDados() {
+        setProgress(100, 'Nenhuma vistoria para processar.');
+    }
+</script>
+</body>
+</html>
