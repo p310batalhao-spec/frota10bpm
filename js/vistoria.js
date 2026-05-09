@@ -413,6 +413,8 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 cpf:          assinaturaDados.cpf,
                 combustivel:  document.getElementById('v-combustivel').value,
                 km:           document.getElementById('v-km').value,
+                horaInicio:   document.getElementById('v-hora-inicio').value,
+                horaTermino:  document.getElementById('v-hora-termino').value,
                 limpeza:      document.getElementById('v-limpeza').value,
                 equipamentos: document.getElementById('v-equipamentos').value,
                 farois:       document.getElementById('v-farois').value,
