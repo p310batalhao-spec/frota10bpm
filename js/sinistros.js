@@ -548,7 +548,7 @@ async function confirmarExclusao() {
 // IMPRIMIR — abre relatório em nova aba passando o ID via URL
 // ================================================================
 function imprimirSinistro(id) {
-    window.open(`/relatorios/relatorio_sinistro.html?id=${id}`, '_blank');
+    window.open(`../relatorios/relatorio_sinistro.html?id=${id}`, '_blank');
 }
 
 // ================================================================
