@@ -36,6 +36,27 @@ function fData(iso) {
     return `${d}/${m}/${a}`;
 }
 
+function injetarEstilosImpressao() {
+    // Garante que as duas páginas sejam impressas corretamente
+    const style = document.createElement('style');
+    style.textContent = `
+        @media print {
+            @page { size: A4; margin: 10mm; }
+            body { margin: 0; padding: 0; }
+            .pagina {
+                page-break-after: always;
+                break-after: page;
+                page-break-inside: avoid;
+            }
+            .pagina:last-child {
+                page-break-after: auto;
+                break-after: auto;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
 function renderizar(s) {
     const tipos     = Array.isArray(s.tipos) ? s.tipos : (s.tipos ? [s.tipos] : []);
     const t = (tipo) => tipos.includes(tipo);
@@ -293,6 +314,7 @@ function renderizar(s) {
 
     document.getElementById('documento').innerHTML = html;
     document.title = `Sinistro ${s.numero || ''} — ${s.placa || ''}`;
+    injetarEstilosImpressao();
 }
 
 carregar();

@@ -668,8 +668,8 @@ async function salvarRegistro() {
         )?.[0];
 
         if (vId) {
-            await fb_patch('manutencao', vId, update);
-            await fb_patch('viaturas', vId, { kmAtual: km, updatedAt: new Date().toISOString() });
+            // Atualiza o nó /viaturas com KM atual e dados de revisão
+            await fb_patch('viaturas', vId, { ...update, kmAtual: km, updatedAt: new Date().toISOString() });
         }
 
         // Atualizar dado local
@@ -1365,4 +1365,3 @@ async function salvarManutencaoManual() {
 document.getElementById('modal-manual').addEventListener('click', function(e) {
     if (e.target === this) fecharModal('modal-manual');
 });
-

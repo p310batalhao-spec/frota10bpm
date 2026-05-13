@@ -1,4 +1,4 @@
-        // ============================================================
+// ============================================================
         // FIREBASE REST
         // ============================================================
         const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
@@ -283,9 +283,11 @@
                     if (viaturasCache[id]?.criadoEm) {
                         dados.criadoEm = viaturasCache[id].criadoEm;
                     }
-                    await fb_put('viaturas', id, dados);
+                    // Usa PATCH para não sobrescrever campos atualizados por outros módulos
+                    // (ex: kmAtual atualizado pela manutenção ou vistoria)
+                    await fb_patch('viaturas', id, dados);
                     msgEl.textContent = '✅ Viatura atualizada com sucesso!';
-                    viaturasCache[id] = dados;
+                    viaturasCache[id] = { ...viaturasCache[id], ...dados };
                 } else {
                     dados.criadoEm = new Date().toISOString();
                     dados.criadoPor = localStorage.getItem('frota_usuario') || 'Sistema';
@@ -514,4 +516,3 @@
                 'success'
             );
         }
-
