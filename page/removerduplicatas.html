@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remover Duplicatas — Sistema de Frota</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 900px;
+            margin: 0 auto 24px;
+        }
+        h1 { font-size: 1.4rem; color: #c8a415; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .subtitle { font-size: .85rem; color: #8b949e; margin-bottom: 24px; line-height: 1.6; }
+        .aviso {
+            background: rgba(220,53,69,.12);
+            border: 1px solid #dc3545;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: .83rem;
+            color: #f07080;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: .9rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: .2s;
+        }
+        .btn-analisar  { background: #2e3f6e; color: white; }
+        .btn-analisar:hover { background: #3a4f8a; }
+        .btn-remover   { background: #dc3545; color: white; }
+        .btn-remover:hover { background: #c82333; }
+        .btn:disabled  { background: #30363d; color: #555; cursor: not-allowed; }
+        .btns { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+
+        .progress-wrap { margin: 16px 0; display: none; }
+        .progress-bg { background: #21262d; border-radius: 6px; height: 8px; overflow: hidden; margin-bottom: 6px; }
+        .progress-bar { height: 100%; background: #c8a415; border-radius: 6px; width: 0%; transition: width .3s; }
+        .progress-label { font-size: .75rem; color: #8b949e; font-family: monospace; }
+
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 16px 0; }
+        .stat { background: #21262d; border-radius: 8px; padding: 12px; text-align: center; }
+        .stat-num { font-size: 1.6rem; font-weight: 700; font-family: monospace; }
+        .stat-label { font-size: .65rem; text-transform: uppercase; letter-spacing: .5px; color: #8b949e; margin-top: 4px; }
+        .c-yellow { color: #e8c04a; } .c-red { color: #f07080; } .c-green { color: #4cc36e; } .c-blue { color: #5dd5f0; }
+
+        .log-wrap {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 14px;
+            max-height: 350px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: .72rem;
+            display: none;
+            margin-top: 16px;
+        }
+        .log-line { padding: 2px 0; border-bottom: 1px solid #161b22; }
+        .ok { color: #4cc36e; } .warn { color: #e8c04a; } .err { color: #f07080; }
+        .info { color: #5dd5f0; } .del { color: #f07080; } .skip { color: #8b949e; }
+
+        .preview-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: .78rem; display: none; }
+        .preview-table th { background: #1a2744; color: white; padding: 8px 10px; text-align: left; }
+        .preview-table td { padding: 7px 10px; border-bottom: 1px solid #21262d; }
+        .preview-table tr:hover td { background: #1c2333; }
+        .badge-manter  { background: rgba(40,167,69,.2);  color: #4cc36e; padding: 2px 8px; border-radius: 4px; font-size: .65rem; font-weight: 700; }
+        .badge-remover { background: rgba(220,53,69,.2);  color: #f07080; padding: 2px 8px; border-radius: 4px; font-size: .65rem; font-weight: 700; }
+        .badge-unico   { background: rgba(93,213,240,.15);color: #5dd5f0; padding: 2px 8px; border-radius: 4px; font-size: .65rem; font-weight: 700; }
+
+        .result-box { margin-top: 16px; padding: 14px 18px; border-radius: 8px; font-weight: 700; display: none; }
+        .result-ok   { background: rgba(40,167,69,.15); border: 1px solid #28a745; color: #4cc36e; }
+        .result-warn { background: rgba(200,164,21,.15); border: 1px solid #c8a415; color: #e8c04a; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1><span class="material-icons">cleaning_services</span> Remover Duplicatas do Firebase</h1>
+    <p class="subtitle">
+        Analisa os nós <code>/viaturas</code> e <code>/manutencao</code> do Firebase, identifica registros com
+        a mesma <strong>placa</strong> ou <strong>prefixo</strong>, e remove os duplicados mantendo sempre
+        o registro com o <strong>maior KM</strong> (mais atualizado).
+    </p>
+    <div class="aviso">
+        ⚠️ <strong>Execute apenas uma vez.</strong> Esta operação apaga registros permanentemente do Firebase.
+        Clique em <strong>Analisar</strong> primeiro para revisar o que será removido antes de confirmar.
+    </div>
+
+    <div class="btns">
+        <button class="btn btn-analisar" id="btn-analisar" onclick="analisar()">
+            <span class="material-icons" style="font-size:1rem">search</span> Analisar Duplicatas
+        </button>
+        <button class="btn btn-remover" id="btn-remover" onclick="confirmarRemocao()" disabled>
+            <span class="material-icons" style="font-size:1rem">delete_sweep</span> Remover Duplicatas
+        </button>
+    </div>
+
+    <div class="progress-wrap" id="pw">
+        <div class="progress-bg"><div class="progress-bar" id="pb"></div></div>
+        <div class="progress-label" id="pl">Aguardando...</div>
+    </div>
+
+    <div class="stats" id="stats" style="display:none">
+        <div class="stat"><div class="stat-num c-blue"   id="s-total">0</div><div class="stat-label">Total /viaturas</div></div>
+        <div class="stat"><div class="stat-num c-blue"   id="s-manut">0</div><div class="stat-label">Total /manutencao</div></div>
+        <div class="stat"><div class="stat-num c-yellow" id="s-grupos">0</div><div class="stat-label">Grupos duplicados</div></div>
+        <div class="stat"><div class="stat-num c-red"    id="s-del">0</div><div class="stat-label">Para remover</div></div>
+        <div class="stat"><div class="stat-num c-green"  id="s-manter">0</div><div class="stat-label">Para manter</div></div>
+    </div>
+
+    <div class="result-box" id="result-box"></div>
+    <table class="preview-table" id="preview-table">
+        <thead>
+            <tr>
+                <th>Nó</th>
+                <th>ID Firebase</th>
+                <th>Prefixo</th>
+                <th>Placa</th>
+                <th>KM Atual</th>
+                <th>Criado em</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody id="preview-tbody"></tbody>
+    </table>
+    <div class="log-wrap" id="log-wrap"></div>
+</div>
+
+<script>
+const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
+const normStr = s => String(s || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+// Plano de remoção: { id, no } a ser deletado
+let planoRemocao = [];
+
+function log(msg, tipo = 'info') {
+    const w = document.getElementById('log-wrap');
+    w.style.display = 'block';
+    const d = document.createElement('div');
+    d.className = `log-line ${tipo}`;
+    d.textContent = `[${new Date().toLocaleTimeString('pt-BR')}] ${msg}`;
+    w.appendChild(d);
+    w.scrollTop = w.scrollHeight;
+}
+function prog(pct, label) {
+    document.getElementById('pw').style.display = '';
+    document.getElementById('pb').style.width = pct + '%';
+    document.getElementById('pl').textContent = label;
+}
+
+async function analisar() {
+    planoRemocao = [];
+    document.getElementById('btn-analisar').disabled = true;
+    document.getElementById('btn-remover').disabled  = true;
+    document.getElementById('result-box').style.display = 'none';
+    document.getElementById('preview-table').style.display = 'none';
+    document.getElementById('preview-tbody').innerHTML = '';
+    document.getElementById('stats').style.display = '';
+    document.getElementById('log-wrap').innerHTML = '';
+
+    try {
+        prog(5, 'Buscando dados...');
+        log('Conectando ao Firebase...', 'info');
+
+        const [rv, rm] = await Promise.all([
+            fetch(`${FB_URL}/viaturas.json`).then(r => r.json()),
+            fetch(`${FB_URL}/manutencao.json`).then(r => r.json())
+        ]);
+
+        const viaturas  = rv || {};
+        const manutencao = rm || {};
+
+        const totalV = Object.keys(viaturas).length;
+        const totalM = Object.keys(manutencao).length;
+        document.getElementById('s-total').textContent = totalV;
+        document.getElementById('s-manut').textContent = totalM;
+        log(`/viaturas: ${totalV} registros | /manutencao: ${totalM} registros`, 'info');
+
+        prog(20, 'Analisando duplicatas...');
+
+        // ── Agrupar /viaturas por chave normalizada (placa > prefixo) ──
+        // Chave: placa normalizada. Se não tiver placa, usa prefixo.
+        const gruposV = {}; // chave -> [{id, dados}]
+        Object.entries(viaturas).forEach(([id, v]) => {
+            const chave = normStr(v.placa) || normStr(v.prefixo);
+            if (!chave) return;
+            if (!gruposV[chave]) gruposV[chave] = [];
+            gruposV[chave].push({ id, no: 'viaturas', dados: v, chave });
+        });
+
+        // ── Agrupar /manutencao pelo MESMO critério ──
+        const gruposM = {};
+        Object.entries(manutencao).forEach(([id, v]) => {
+            const chave = normStr(v.placa) || normStr(v.prefixo);
+            if (!chave) return;
+            if (!gruposM[chave]) gruposM[chave] = [];
+            gruposM[chave].push({ id, no: 'manutencao', dados: v, chave });
+        });
+
+        prog(50, 'Identificando registros a manter...');
+
+        let totalGrupos = 0, totalRemover = 0, totalManter = 0;
+        const linhasPreview = [];
+
+        // ── Processar cada nó separadamente ──
+        for (const [no, grupos] of [['viaturas', gruposV], ['manutencao', gruposM]]) {
+            for (const [chave, registros] of Object.entries(grupos)) {
+                if (registros.length <= 1) {
+                    // Único — sem duplicata
+                    const r = registros[0];
+                    totalManter++;
+                    linhasPreview.push({ ...r, acao: 'unico' });
+                    continue;
+                }
+
+                // Múltiplos — ordenar por KM desc, depois por data de criação desc
+                registros.sort((a, b) => {
+                    const kmA = parseFloat(a.dados.kmAtual) || 0;
+                    const kmB = parseFloat(b.dados.kmAtual) || 0;
+                    if (kmB !== kmA) return kmB - kmA; // maior KM primeiro
+                    // Desempate: mais recente (criadoEm ou atualizadoEm)
+                    const dA = new Date(a.dados.criadoEm || a.dados.updatedAt || 0).getTime();
+                    const dB = new Date(b.dados.criadoEm || b.dados.updatedAt || 0).getTime();
+                    return dB - dA;
+                });
+
+                totalGrupos++;
+                registros.forEach((r, i) => {
+                    if (i === 0) {
+                        // Primeiro = manter (maior KM / mais recente)
+                        totalManter++;
+                        linhasPreview.push({ ...r, acao: 'manter' });
+                        log(`MANTER  [${no}] ${r.id} — ${r.dados.prefixo || '?'} / ${r.dados.placa || '?'} — KM: ${r.dados.kmAtual || 0}`, 'ok');
+                    } else {
+                        // Demais = remover
+                        totalRemover++;
+                        planoRemocao.push({ id: r.id, no });
+                        linhasPreview.push({ ...r, acao: 'remover' });
+                        log(`REMOVER [${no}] ${r.id} — ${r.dados.prefixo || '?'} / ${r.dados.placa || '?'} — KM: ${r.dados.kmAtual || 0}`, 'warn');
+                    }
+                });
+            }
+        }
+
+        document.getElementById('s-grupos').textContent = totalGrupos;
+        document.getElementById('s-del').textContent    = totalRemover;
+        document.getElementById('s-manter').textContent = totalManter;
+
+        // ── Renderizar preview ──
+        const tbody = document.getElementById('preview-tbody');
+        // Ordenar: grupos duplicados primeiro
+        linhasPreview.sort((a, b) => {
+            const ord = { remover: 0, manter: 1, unico: 2 };
+            return (ord[a.acao] || 2) - (ord[b.acao] || 2);
+        });
+        linhasPreview.forEach(r => {
+            const tr = document.createElement('tr');
+            const km = r.dados.kmAtual ? Number(r.dados.kmAtual).toLocaleString('pt-BR') + ' km' : '—';
+            const dt = r.dados.criadoEm ? new Date(r.dados.criadoEm).toLocaleDateString('pt-BR') : '—';
+            const badge = r.acao === 'manter'
+                ? '<span class="badge-manter">MANTER</span>'
+                : r.acao === 'remover'
+                ? '<span class="badge-remover">REMOVER</span>'
+                : '<span class="badge-unico">ÚNICO</span>';
+            tr.innerHTML = `
+                <td><code style="font-size:.7rem">${r.no}</code></td>
+                <td><code style="font-size:.68rem;color:#8b949e">${r.id}</code></td>
+                <td>${r.dados.prefixo || '—'}</td>
+                <td><strong>${r.dados.placa || '—'}</strong></td>
+                <td style="font-family:monospace">${km}</td>
+                <td>${dt}</td>
+                <td>${badge}</td>`;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('preview-table').style.display = totalRemover > 0 ? '' : 'none';
+
+        prog(100, 'Análise concluída.');
+
+        const result = document.getElementById('result-box');
+        result.style.display = '';
+        if (totalRemover === 0) {
+            result.className = 'result-box result-ok';
+            result.textContent = '✅ Nenhuma duplicata encontrada! Os dados estão limpos.';
+            document.getElementById('btn-remover').disabled = true;
+        } else {
+            result.className = 'result-box result-warn';
+            result.innerHTML = `⚠️ Encontrados <strong>${totalGrupos} grupo(s)</strong> com duplicatas. <strong>${totalRemover} registro(s)</strong> serão removidos. Revise a tabela acima e clique em <strong>Remover Duplicatas</strong> para confirmar.`;
+            document.getElementById('btn-remover').disabled = false;
+        }
+
+    } catch(e) {
+        log(`ERRO: ${e.message}`, 'err');
+        console.error(e);
+    } finally {
+        document.getElementById('btn-analisar').disabled = false;
+    }
+}
+
+async function confirmarRemocao() {
+    if (!planoRemocao.length) return;
+    if (!confirm(`Confirma a remoção de ${planoRemocao.length} registro(s) duplicado(s) do Firebase?\n\nEsta ação não pode ser desfeita.`)) return;
+
+    document.getElementById('btn-remover').disabled  = true;
+    document.getElementById('btn-analisar').disabled = true;
+
+    let removidos = 0, erros = 0;
+
+    for (let i = 0; i < planoRemocao.length; i++) {
+        const { id, no } = planoRemocao[i];
+        prog(Math.round((i / planoRemocao.length) * 100), `Removendo ${i + 1} de ${planoRemocao.length}...`);
+        try {
+            const r = await fetch(`${FB_URL}/${no}/${id}.json`, { method: 'DELETE' });
+            if (r.ok) {
+                removidos++;
+                log(`✅ DELETADO [${no}] ${id}`, 'del');
+            } else {
+                erros++;
+                log(`ERRO HTTP ${r.status} ao deletar [${no}] ${id}`, 'err');
+            }
+        } catch(e) {
+            erros++;
+            log(`ERRO ao deletar [${no}] ${id}: ${e.message}`, 'err');
+        }
+        await new Promise(r => setTimeout(r, 80));
+    }
+
+    prog(100, 'Concluído!');
+
+    const result = document.getElementById('result-box');
+    result.style.display = '';
+    if (erros === 0) {
+        result.className = 'result-box result-ok';
+        result.innerHTML = `✅ <strong>${removidos} duplicata(s) removida(s)</strong> com sucesso! Recarregue a página de manutenção para ver os dados limpos.`;
+    } else {
+        result.className = 'result-box result-warn';
+        result.innerHTML = `⚠️ ${removidos} removida(s), ${erros} erro(s). Verifique o log abaixo.`;
+    }
+
+    document.getElementById('btn-analisar').disabled = false;
+    planoRemocao = [];
+}
+</script>
+</body>
+</html>

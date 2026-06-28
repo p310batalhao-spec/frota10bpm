@@ -38,14 +38,14 @@ function atualizarRelogio() {
 
 function checkLogin() {
     const u = localStorage.getItem('frota_usuario');
-    if (!u) { window.location.href = '/page/login.html'; return; }
+    if (!u) { window.location.href = '../page/login.html'; return; }
     document.getElementById('user-info').innerHTML = `<p>Usuário:</p><p class="user-nome">${u}</p>`;
 }
 
 function logout() {
     localStorage.removeItem('frota_usuario');
     localStorage.removeItem('frota_perfil');
-    window.location.href = '/page/login.html';
+    window.location.href = '../page/login.html';
 }
 
 // ================================================================

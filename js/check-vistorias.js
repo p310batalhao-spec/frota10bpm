@@ -1,4 +1,4 @@
-    // ================================================================
+// ================================================================
     // FIREBASE
     // ================================================================
     const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
@@ -29,7 +29,7 @@
         if (confirm('Deseja encerrar a sessão?')) {
             localStorage.removeItem('frota_usuario');
             localStorage.removeItem('frota_perfil');
-            window.location.href = '/page/login.html';
+            window.location.href = '../page/login.html';
         }
     }
 
@@ -309,7 +309,5 @@
     // PLACEHOLDER — abrir nova vistoria (mantém compatibilidade)
     // ================================================================
 
-    // ================================================================
-    // CARREGAMENTO
-    // ================================================================
-    carregarVistorias();
+    // NOTA: carregarVistorias() já é chamada no window.onload acima.
+    // Chamada duplicada removida para evitar 2 fetches desnecessários ao Firebase.

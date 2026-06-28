@@ -238,10 +238,25 @@ async function processarPlanilha(file) {
         const viaturasFB = await fb_get('viaturas') || {};
         const manutFB    = await fb_get('manutencao') || {};
 
-        // Índice por placa para lookup rápido
-        const porPlaca = {};
+        // Índice por placa E por prefixo — busca em /viaturas e em /manutencao
+        const normStr = s => String(s || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const porPlaca   = {};  // chave normalizada -> viaturaId
+        const porPrefixo = {};  // chave normalizada -> viaturaId
+
         Object.entries(viaturasFB).forEach(([id, v]) => {
-            if (v.placa) porPlaca[v.placa.toUpperCase().replace(/[^A-Z0-9]/g,'')] = id;
+            if (v.placa)   porPlaca[normStr(v.placa)]   = id;
+            if (v.prefixo) porPrefixo[normStr(v.prefixo)] = id;
+        });
+        // Também indexa registros do nó /manutencao que podem ter IDs diferentes
+        Object.entries(manutFB).forEach(([id, v]) => {
+            if (v.placa   && !porPlaca[normStr(v.placa)])     porPlaca[normStr(v.placa)]   = id;
+            if (v.prefixo && !porPrefixo[normStr(v.prefixo)]) porPrefixo[normStr(v.prefixo)] = id;
+        });
+
+        // Guarda o kmAtual atual de cada viatura para comparação
+        const kmAtualFB = {};
+        Object.entries(viaturasFB).forEach(([id, v]) => {
+            kmAtualFB[id] = parseFloat(v.kmAtual) || 0;
         });
 
         const viaturas = [];
@@ -325,20 +340,52 @@ async function processarPlanilha(file) {
 
             viaturas.push(dadosManut);
 
-            // Salvar no nó "manutencao" pelo ID da viatura ou pela placa
-            const vId = porPlaca[placa];
-            if (vId) {
-                await fb_patch('manutencao', vId, dadosManut);
-                atualizados++;
+            // ── Lookup: placa primeiro, depois prefixo ──
+            const vId = porPlaca[normStr(placa)] || porPrefixo[normStr(prefixo)] || null;
 
-                // Atualizar KM e campos na viatura principal
-                await fb_patch('viaturas', vId, {
-                    kmAtual,
-                    status: statusViatura,
-                    updatedAt: new Date().toISOString(),
-                });
+            if (vId) {
+                // Viatura encontrada — só atualiza KM se o XML tiver KM MAIOR que o banco
+                const kmBanco = kmAtualFB[vId] || 0;
+                if (kmAtual > kmBanco) {
+                    // XML tem KM maior: atualiza manutenção e viatura
+                    await fb_patch('manutencao', vId, dadosManut);
+                    await fb_patch('viaturas', vId, {
+                        kmAtual,
+                        status:    statusViatura,
+                        updatedAt: new Date().toISOString(),
+                        updatedBy: usuario,
+                    });
+                    // Atualiza cache para evitar reprocessar com km antigo
+                    kmAtualFB[vId] = kmAtual;
+                    atualizados++;
+                } else {
+                    // Banco já tem KM igual ou maior: só atualiza campos não-KM
+                    // (próxima revisão, status, locadora) sem mexer no hodômetro
+                    await fb_patch('manutencao', vId, {
+                        proxRevisao: dadosManut.proxRevisao,
+                        ultRevisao:  dadosManut.ultRevisao,
+                        locadora:    dadosManut.locadora,
+                        situacao:    dadosManut.situacao,
+                        faltaKm:     calcularSituacao(kmBanco, dadosManut.proxRevisao, dadosManut.locadora).falta,
+                        updatedAt:   new Date().toISOString(),
+                        updatedBy:   usuario,
+                    });
+                    // Atualiza /viaturas com campos nao-KM (modelo, marca, locadora, status)
+                    // mas preserva o kmAtual que ja esta mais alto no banco
+                    await fb_patch('viaturas', vId, {
+                        modelo:              dadosManut.modelo || undefined,
+                        marca:               dadosManut.marca  || undefined,
+                        locadora:            dadosManut.locadora || undefined,
+                        proprietarioLocadora: dadosManut.locadora || undefined,
+                        status:              dadosManut.situacao === 'critico' || dadosManut.situacao === 'revisao'
+                                             ? 'Manutencao' : 'Operacional',
+                        updatedAt:           new Date().toISOString(),
+                        updatedBy:           usuario,
+                    });
+                    atualizados++; // contabiliza mesmo quando km nao mudou
+                }
             } else {
-                // Cadastrar nova viatura com TODOS os campos do cadastro-viaturas
+                // Viatura NÃO encontrada nem por placa nem por prefixo: cadastrar nova
                 const novaViatura = {
                     placa:                 placa || '--',
                     prefixo:               prefixo || '--',
@@ -362,7 +409,13 @@ async function processarPlanilha(file) {
                 };
                 const resultado = await fb_post('viaturas', novaViatura);
                 if (resultado && resultado.name) {
-                    await fb_put('manutencao', resultado.name, { ...dadosManut, viaturaId: resultado.name });
+                    const newId = resultado.name;
+                    // Usa PATCH para nunca criar duplicata se a chave já existir
+                    await fb_patch('manutencao', newId, { ...dadosManut, viaturaId: newId });
+                    // Indexa o novo ID para não duplicar se aparecer de novo na planilha
+                    if (placa)   porPlaca[normStr(placa)]     = newId;
+                    if (prefixo) porPrefixo[normStr(prefixo)] = newId;
+                    kmAtualFB[newId] = kmAtual;
                     adicionarNotificacao(`Nova viatura cadastrada via planilha: ${prefixo || placa}`, 'cadastro', placa || prefixo);
                     toast(`✅ Viatura ${prefixo || placa} cadastrada!`, 'success');
                 }

@@ -320,12 +320,14 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                 }
 
                 window._mapaItens = {};
+                // Array + join: 1 reflow em vez de N (evita lentidão com muitas viaturas)
+                const linhasVist = [];
                 pendentes.forEach(item => {
                     window._mapaItens[item.id] = item;
                     const dtLanc = item.dataHora
                         ? new Date(item.dataHora).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
                         : '--';
-                    corpo.innerHTML += `
+                    linhasVist.push(`
                         <tr>
                             <td><strong>${item.guarnicao || '--'}</strong></td>
                             <td>${item.prefixo || '--'}</td>
@@ -337,8 +339,9 @@ const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
                                     <span class="material-icons">assignment_turned_in</span> VISTORIAR
                                 </button>
                             </td>
-                        </tr>`;
+                        </tr>`);
                 });
+                corpo.innerHTML = linhasVist.join('');
 
             } catch (e) {
                 console.error(e);

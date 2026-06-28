@@ -448,10 +448,13 @@
 
             mostrarStatusCad('⏳ Conectando ao Firebase...', 'info');
             const viaturasFB = await fb_get('viaturas') || {};
-            // Índice placa → ID Firebase (normalizado)
-            const porPlaca = {};
+            // Índice por PLACA e por PREFIXO (normalizado) — evita duplicatas
+            const normCad = s => String(s || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+            const porPlaca   = {};
+            const porPrefixo = {};
             for (const [id, v] of Object.entries(viaturasFB)) {
-                if (v.placa) porPlaca[v.placa.toUpperCase().replace(/[^A-Z0-9]/g, '')] = id;
+                if (v.placa)   porPlaca[normCad(v.placa)]     = id;
+                if (v.prefixo) porPrefixo[normCad(v.prefixo)] = id;
             }
 
             const usuario = localStorage.getItem('frota_usuario') || 'Sistema';
@@ -486,22 +489,34 @@
                     atualizadoPor:        usuario,
                 };
 
-                const chave = placa.replace(/[^A-Z0-9]/g, '');
-                const vId   = chave ? porPlaca[chave] : null;
+                const chavePlaca   = normCad(placa);
+                const chavePrefixo = normCad(prefixo);
+                // Lookup: placa primeiro, depois prefixo — ambos indexados
+                const vId = (chavePlaca ? porPlaca[chavePlaca] : null)
+                          || (chavePrefixo ? porPrefixo[chavePrefixo] : null)
+                          || null;
 
                 if (vId) {
-                    // Atualiza todos os campos (PATCH preserva campos não enviados)
-                    await fb_patch('viaturas', vId, dados);
-                    viaturasCache[vId] = { ...viaturasCache[vId], ...dados };
+                    // Viatura encontrada — atualiza sem criar duplicata
+                    // Só atualiza kmAtual se o novo for MAIOR que o do banco
+                    const kmBanco = parseFloat(viaturasFB[vId]?.kmAtual) || 0;
+                    const dadosPatch = { ...dados };
+                    if (kmRaw <= kmBanco) {
+                        delete dadosPatch.kmAtual; // preserva KM mais alto do banco
+                    }
+                    await fb_patch('viaturas', vId, dadosPatch);
+                    viaturasCache[vId] = { ...viaturasCache[vId], ...dadosPatch };
                     atualizados++;
                 } else {
-                    // Cadastra nova viatura
+                    // Nao encontrada: cadastra nova viatura
                     dados.criadoEm  = new Date().toISOString();
                     dados.criadoPor = usuario;
                     const res = await fb_post('viaturas', dados);
                     if (res && res.name) {
                         viaturasCache[res.name] = dados;
-                        porPlaca[chave] = res.name;
+                        // Indexa o novo ID para evitar duplicata se aparecer novamente na planilha
+                        if (chavePlaca)   porPlaca[chavePlaca]     = res.name;
+                        if (chavePrefixo) porPrefixo[chavePrefixo] = res.name;
                         cadastrados++;
                     }
                 }
