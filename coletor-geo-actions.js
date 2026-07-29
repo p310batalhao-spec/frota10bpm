@@ -1,65 +1,65 @@
 /**
- * coletor-geo-actions.js
- * Versão para GitHub Actions — faz UMA coleta e encerra.
- * O workflow.yml agenda a execução a cada 2 minutos.
+ * coletor-geo-actions.js — GitHub Actions
+ * Coleta GEO e envia para Google Apps Script → Google Sheets
  * 
- * Variável de ambiente necessária (GitHub Secret):
- *   FIREBASE_URL = https://frota10bpm-dc14a-default-rtdb.firebaseio.com
+ * Secrets necessários:
+ *   GAS_URL = URL do Apps Script implantado
  */
 
 const https = require('https');
 
-const FB_URL  = process.env.FIREBASE_URL
-             || 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
+const GEO_URL   = 'https://analisacad.seguranca.al.gov.br/app/cad/cad_blank_carregar_pontos/cad_blank_carregar_pontos.php';
+const GAS_URL   = process.env.GAS_URL; // Secret do GitHub
+const UNIDADE   = '10º BPM';
 
-const GEO_URL = 'https://analisacad.seguranca.al.gov.br/app/cad/cad_blank_carregar_pontos/cad_blank_carregar_pontos.php';
-
-const UNIDADE_FROTA = '10º BPM';
-
-// ── Helpers HTTP ─────────────────────────────────────────────────
+// ── HTTP helpers ─────────────────────────────────────────────────
 function httpGet(url) {
     return new Promise((resolve, reject) => {
-        const opts = {
+        const req = https.get(url, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                'Referer':    'https://analisacad.seguranca.al.gov.br/',
-                'Accept':     'text/plain,*/*',
+                'User-Agent': 'Mozilla/5.0',
+                'Referer': 'https://analisacad.seguranca.al.gov.br/',
             },
             rejectUnauthorized: false,
-        };
-        const req = https.get(url, opts, res => {
+        }, res => {
             const chunks = [];
             res.on('data', c => chunks.push(c));
             res.on('end', () => resolve(Buffer.concat(chunks)));
         });
         req.on('error', reject);
-        req.setTimeout(20000, () => { req.destroy(); reject(new Error('Timeout')); });
+        req.setTimeout(20000, () => { req.destroy(); reject(new Error('Timeout GEO')); });
     });
 }
 
-function fbPut(path, dados) {
+function httpPost(urlStr, dados) {
     return new Promise((resolve, reject) => {
         const corpo = JSON.stringify(dados);
-        // path pode ser '/rastreamento' (nó raiz) ou '/rastreamento/123/456'
-        const url   = new URL(`${FB_URL}${path}.json`);
+        const url   = new URL(urlStr);
         const opts  = {
-            method:  'PUT',
+            hostname: url.hostname,
+            path:     url.pathname + url.search,
+            method:   'POST',
             headers: {
                 'Content-Type':   'application/json',
                 'Content-Length': Buffer.byteLength(corpo),
             },
         };
-        const req = https.request(url, opts, res => {
-            res.resume();
-            resolve(res.statusCode);
+        const req = https.request(opts, res => {
+            const chunks = [];
+            res.on('data', c => chunks.push(c));
+            res.on('end', () => {
+                try { resolve(JSON.parse(Buffer.concat(chunks).toString())); }
+                catch { resolve({ ok: true }); }
+            });
         });
         req.on('error', reject);
+        req.setTimeout(30000, () => { req.destroy(); reject(new Error('Timeout GAS')); });
         req.write(corpo);
         req.end();
     });
 }
 
-// ── Parser ───────────────────────────────────────────────────────
+// ── Parser GEO ───────────────────────────────────────────────────
 function parsear(buf) {
     let texto = buf.toString('utf8');
     if (!texto.includes('#(')) texto = buf.toString('latin1');
@@ -82,95 +82,74 @@ function parsear(buf) {
 
         lista.push({
             lat, lng,
-            idRadio:    c[3].trim(),
-            dataHora,   timestamp,
-            guarnicao:  c[5].trim(),
-            unidade:    c[6].trim(),
-            modalidade: c[7].trim(),
-            militares:  c[8].trim(),
-            ocorrencia: c[9].trim() !== '0' ? c[9].trim() : null,
+            idRadio:     c[3].trim(),
+            dataHora,    timestamp,
+            guarnicao:   c[5].trim(),
+            unidade:     c[6].trim(),
+            modalidade:  c[7].trim(),
+            militares:   c[8].trim(),
+            ocorrencia:  c[9].trim() !== '0' ? c[9].trim() : null,
             tipoVeiculo: c[11].trim(),
-            status:     c[13] ? c[13].trim() : '',
+            status:      c[13] ? c[13].trim() : '',
         });
     });
     return lista;
 }
 
-// ── Coleta principal ─────────────────────────────────────────────
+// ── Main ─────────────────────────────────────────────────────────
 async function main() {
-    console.log(`[GEO] ${new Date().toLocaleString('pt-BR')} — iniciando coleta...`);
+    if (!GAS_URL) {
+        console.error('[GEO] GAS_URL não configurado. Adicione o secret no GitHub.');
+        process.exit(1);
+    }
 
-    // 1. Busca dados do GEO
+    console.log(`[GEO] ${new Date().toLocaleString('pt-BR')} — coletando...`);
+
+    // 1. Busca GEO
     const url = `${GEO_URL}?numQuery=1&idUnidade=0&idModalidade=999999&numRadio=0`;
     const buf = await httpGet(url);
     const todas = parsear(buf);
     console.log(`[GEO] ${todas.length} guarnicoes recebidas`);
 
-    // 2. Filtra pela unidade (normaliza encoding)
+    // 2. Filtra 10º BPM
     const norm = s => String(s || '').replace(/[^A-Z0-9 /]/gi, '').trim().toUpperCase();
-    const alvo = norm(UNIDADE_FROTA);
+    const alvo = norm(UNIDADE);
     const daUnidade = todas.filter(g => norm(g.unidade) === alvo);
-    console.log(`[GEO] Da unidade "${UNIDADE_FROTA}": ${daUnidade.length} guarnicoes`);
+    console.log(`[GEO] 10 BPM: ${daUnidade.length} guarnicoes`);
 
     if (daUnidade.length === 0) {
-        console.log('[GEO] Nenhuma guarnicao para salvar. Encerrando.');
+        console.log('[GEO] Nenhuma guarnicao. Encerrando.');
         process.exit(0);
     }
 
-    // 3. Salva no Firebase
-    const agora = new Date().toISOString();
-    let salvas = 0;
+    // 3. Formata payload para o GAS
+    const guarnicoes = daUnidade.map(g => ({
+        idRadio:     g.idRadio,
+        nome:        g.guarnicao,
+        unidade:     g.unidade,
+        modalidade:  g.modalidade,
+        militares:   g.militares,
+        tipoVeiculo: g.tipoVeiculo,
+        status:      g.status,
+        ocorrencia:  g.ocorrencia,
+        lat:         g.lat,
+        lng:         g.lng,
+        dataHoraGEO: g.dataHora,
+        timestamp:   g.timestamp,
+    }));
 
-    // Monta objeto completo do snapshot atual — todos os radios do 10º BPM de uma vez
-    // Isso SUBSTITUI o nó /rastreamento inteiro, garantindo que só fique o 10º BPM
-    const snapshot = {};
-    for (const g of daUnidade) {
-        const chave = g.idRadio;
-        snapshot[chave] = {
-            lat:         g.lat,
-            lng:         g.lng,
-            idRadio:     g.idRadio,
-            nome:        g.guarnicao,
-            unidade:     g.unidade,
-            modalidade:  g.modalidade,
-            militares:   g.militares,
-            tipoVeiculo: g.tipoVeiculo,
-            status:      g.status,
-            ocorrencia:  g.ocorrencia,
-            dataHoraGEO: g.dataHora,
-            coletadoEm:  agora,
-            origem:      'github-actions',
-        };
-        salvas++;
+    // 4. Envia para o Google Apps Script
+    console.log(`[GEO] Enviando para GAS...`);
+    const resp = await httpPost(GAS_URL, { guarnicoes });
+    console.log(`[GEO] GAS respondeu:`, resp);
+
+    if (resp.ok) {
+        console.log(`[GEO] Salvas: ${resp.salvas} guarnicoes no Sheets. Concluido.`);
+    } else {
+        console.error('[GEO] Erro no GAS:', resp.erro);
+        process.exit(1);
     }
 
-    // PUT no nó raiz /rastreamento substitui TUDO — garante que não fica dado antigo/incorreto
-    await fbPut('/rastreamento', snapshot);
-
-    // Histórico: acumula por guarnição/timestamp (não substitui — cresce ao longo do tempo)
-    for (const g of daUnidade) {
-        if (!g.timestamp) continue;
-        const chHist = g.timestamp.replace(/[:.]/g, '-').slice(0, 19);
-        await fbPut(`/rastreamento_historico/${g.idRadio}/${chHist}`, {
-            lat:      g.lat,
-            lng:      g.lng,
-            nome:     g.guarnicao,
-            status:   g.status,
-            dataHora: g.dataHora,
-            militares: g.militares,
-        });
-    }
-
-    // 4. Atualiza status do coletor
-    await fbPut('/rastreamento_meta/status', {
-        online:       true,
-        ultimaColeta: agora,
-        totalGEO:     todas.length,
-        totalUnidade: daUnidade.length,
-        origem:       'github-actions',
-    });
-
-    console.log(`[GEO] Salvas: ${salvas} | Concluido.`);
     process.exit(0);
 }
 
