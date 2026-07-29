@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rastreamento — 10º BPM</title>
+    <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../css/stylesindex.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <style>
+        #mapa { height: calc(100vh - 120px); width: 100%; border-radius: 12px; }
+
+        .painel-lateral {
+            position: fixed;
+            top: 80px; left: 80px;
+            width: 280px;
+            background: var(--cor-card, #fff);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,.18);
+            z-index: 1000;
+            overflow: hidden;
+        }
+        .painel-header {
+            background: #1a2744;
+            color: white;
+            padding: 12px 16px;
+            font-weight: 700;
+            font-size: .9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .painel-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: .82rem;
+            color: #555;
+        }
+        .stat-num { font-weight: 700; font-size: 1.1rem; color: #1a2744; }
+
+        .btn-sync {
+            background: #1a2744;
+            color: white;
+            border: none;
+            padding: 9px 14px;
+            border-radius: 6px;
+            font-size: .82rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+            justify-content: center;
+        }
+        .btn-sync:hover { background: #2e3f6e; }
+        .btn-sync:disabled { background: #aaa; cursor: not-allowed; }
+
+        select.filtro {
+            width: 100%;
+            padding: 7px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: .82rem;
+        }
+
+        .status-sync {
+            font-size: .72rem;
+            color: #888;
+            text-align: center;
+        }
+        .status-sync.ok { color: #28a745; }
+        .status-sync.err { color: #dc3545; }
+
+        .popup-guarnicao { font-size: .82rem; line-height: 1.6; min-width: 200px; }
+        .popup-guarnicao strong { font-size: .9rem; color: #1a2744; display: block; margin-bottom: 4px; }
+        .popup-badge {
+            display: inline-block;
+            padding: 1px 7px;
+            border-radius: 4px;
+            font-size: .7rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .legenda {
+            position: fixed;
+            bottom: 30px; right: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.15);
+            padding: 12px 16px;
+            font-size: .75rem;
+            z-index: 1000;
+        }
+        .legenda-item { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+        .legenda-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-info-left">
+            <img class="brasao" src="../img/brasao.png" alt="Brasão 10º BPM">
+            <div class="cabecalhotexto">
+                <h1>Sistema de Controle de Frota</h1>
+                <h3>10º Batalhão de Polícia Militar — Rastreamento</h3>
+            </div>
+        </div>
+        <div class="header-info-right">
+            <div class="relogio" id="relogio"></div>
+            <div class="exibirusuario" id="user-info"></div>
+        </div>
+    </header>
+
+    <!-- PAINEL LATERAL -->
+    <div class="painel-lateral">
+        <div class="painel-header">
+            <span class="material-icons" style="font-size:1.1rem">radar</span>
+            Rastreamento GEO
+        </div>
+        <div class="painel-body">
+            <select class="filtro" id="filtro-unidade" onchange="aplicarFiltro()">
+                <option value="">Todas as unidades</option>
+                <option value="10º BPM" selected>10º BPM</option>
+                <option value="3º BPM">3º BPM</option>
+                <option value="5º BPM">5º BPM</option>
+                <option value="8º BPM">8º BPM</option>
+            </select>
+
+            <select class="filtro" id="filtro-modalidade" onchange="aplicarFiltro()">
+                <option value="">Todas as modalidades</option>
+                <option value="RADIO PATRULHA">Rádio Patrulha</option>
+                <option value="ROCOM">ROCOM</option>
+                <option value="FORÇA TÁTICA">Força Tática</option>
+                <option value="OPERAÇÕES ESPECIAIS">Operações Especiais</option>
+                <option value="POLICIAMENTO DE TRANSITO">Trânsito</option>
+                <option value="POSTO FIXO">Posto Fixo</option>
+            </select>
+
+            <div class="stat-row">
+                <span>Guarnições no mapa</span>
+                <span class="stat-num" id="total-mapa">0</span>
+            </div>
+            <div class="stat-row">
+                <span>Em ocorrência</span>
+                <span class="stat-num" id="total-ocorrencia" style="color:#dc3545">0</span>
+            </div>
+            <div class="stat-row">
+                <span>Última atualização</span>
+                <span id="ultima-atualizacao" style="font-size:.75rem;color:#888">—</span>
+            </div>
+
+            <button class="btn-sync" id="btn-sync" onclick="sincronizarAgora()">
+                <span class="material-icons" style="font-size:1rem">sync</span>
+                Atualizar agora
+            </button>
+
+            <div class="status-sync" id="status-sync">Clique para carregar os dados</div>
+
+            <label style="display:flex;align-items:center;gap:6px;font-size:.78rem;cursor:pointer">
+                <input type="checkbox" id="auto-sync" onchange="toggleAutoSync(this.checked)">
+                Atualização automática (100s)
+            </label>
+        </div>
+    </div>
+
+    <!-- MAPA -->
+    <div id="mapa"></div>
+
+    <!-- LEGENDA -->
+    <div class="legenda">
+        <strong style="font-size:.78rem;display:block;margin-bottom:6px">Modalidade</strong>
+        <div class="legenda-item"><div class="legenda-dot" style="background:#2196F3"></div>Rádio Patrulha</div>
+        <div class="legenda-item"><div class="legenda-dot" style="background:#FF9800"></div>ROCOM</div>
+        <div class="legenda-item"><div class="legenda-dot" style="background:#9C27B0"></div>Força Tática</div>
+        <div class="legenda-item"><div class="legenda-dot" style="background:#F44336"></div>Ops Especiais</div>
+        <div class="legenda-item"><div class="legenda-dot" style="background:#4CAF50"></div>Outros</div>
+        <div class="legenda-item"><div class="legenda-dot" style="background:#FF0000;border:2px solid #000"></div>Em ocorrência</div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // ── Inicialização ──
+        const FB_URL = 'https://frota10bpm-dc14a-default-rtdb.firebaseio.com';
+        let mapa, marcadores = {}, todasGuarnicoes = [];
+        let _autoInterval = null;
+
+        window.onload = () => {
+            verificarSessao();
+            setInterval(atualizarRelogio, 1000);
+            iniciarMapa();
+        };
+
+        function verificarSessao() {
+            const u = localStorage.getItem('frota_usuario');
+            if (!u) { window.location.href = '../page/login.html'; return; }
+            document.getElementById('user-info').textContent = `Olá, ${u}`;
+        }
+
+        function atualizarRelogio() {
+            const a = new Date();
+            document.getElementById('relogio').textContent = a.toLocaleString('pt-BR');
+        }
+
+        function iniciarMapa() {
+            mapa = L.map('mapa').setView([-9.4238, -36.6299], 8);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap',
+                maxZoom: 18,
+            }).addTo(mapa);
+        }
+
+        // ── Cor por modalidade ──
+        function corModalidade(modalidade) {
+            if (!modalidade) return '#4CAF50';
+            const m = modalidade.toUpperCase();
+            if (m.includes('RADIO PATRULHA') || m.includes('RÁDIO')) return '#2196F3';
+            if (m.includes('ROCOM'))           return '#FF9800';
+            if (m.includes('FORÇA TÁTICA') || m.includes('FORÇA TAREFA')) return '#9C27B0';
+            if (m.includes('OPERAÇÕES ESPECIAIS') || m.includes('ESPECIAIS')) return '#F44336';
+            if (m.includes('TRANSITO') || m.includes('TRÂNSITO')) return '#00BCD4';
+            if (m.includes('POSTO FIXO') || m.includes('FIXO')) return '#795548';
+            return '#4CAF50';
+        }
+
+        function criarIcone(guarnicao) {
+            const cor = guarnicao.ocorrencia ? '#FF0000' : corModalidade(guarnicao.modalidade);
+            const tamanho = guarnicao.ocorrencia ? 14 : 10;
+            return L.divIcon({
+                html: `<div style="
+                    width:${tamanho}px;height:${tamanho}px;
+                    background:${cor};
+                    border-radius:50%;
+                    border:2px solid white;
+                    box-shadow:0 0 4px rgba(0,0,0,.4)
+                    ${guarnicao.ocorrencia ? ';animation:pulse 1s infinite' : ''}
+                "></div>`,
+                className: '',
+                iconSize: [tamanho + 4, tamanho + 4],
+                iconAnchor: [(tamanho + 4) / 2, (tamanho + 4) / 2],
+            });
+        }
+
+        // ── Renderizar marcadores ──
+        function renderizarMarcadores(guarnicoes) {
+            // Remove marcadores antigos
+            Object.values(marcadores).forEach(m => mapa.removeLayer(m));
+            marcadores = {};
+
+            let emOcorrencia = 0;
+
+            for (const g of guarnicoes) {
+                const cor = corModalidade(g.modalidade);
+                const badgeCor = g.ocorrencia ? 'background:#dc3545;color:white' : `background:${cor};color:white`;
+
+                const popup = '<div class="popup-guarnicao">'
+                    + '<strong>' + (g.nome || g.guarnicao || '--') + '</strong>'
+                    + '<span class="popup-badge" style="' + badgeCor + '">' + (g.modalidade || '--') + '</span><br>'
+                    + '<b>Unidade:</b> ' + (g.unidade || '--') + '<br>'
+                    + '<b>Efetivo:</b> ' + (g.militares || '--') + '<br>'
+                    + '<b>Status:</b> ' + (g.status || '--') + '<br>'
+                    + (g.ocorrencia ? '<b style="color:#dc3545">Ocorrencia: ' + g.ocorrencia + '</b><br>' : '')
+                    + '<b>Hora GEO:</b> ' + (g.dataHoraGEO || '--') + '<br>'
+                    + '<b>Atualizado:</b> ' + (g.coletadoEm ? new Date(g.coletadoEm).toLocaleTimeString('pt-BR') : '--')
+                    + '</div>';
+
+                const marker = L.marker([g.lat, g.lng], { icon: criarIcone(g) })
+                    .bindPopup(popup)
+                    .addTo(mapa);
+
+                marcadores[g.idRadio] = marker;
+                if (g.ocorrencia) emOcorrencia++;
+            }
+
+            document.getElementById('total-mapa').textContent = guarnicoes.length;
+            document.getElementById('total-ocorrencia').textContent = emOcorrencia;
+            document.getElementById('ultima-atualizacao').textContent =
+                new Date().toLocaleTimeString('pt-BR');
+        }
+
+        // ── Filtros ──
+        function aplicarFiltro() {
+            const unidade    = document.getElementById('filtro-unidade').value;
+            const modalidade = document.getElementById('filtro-modalidade').value;
+
+            // Normaliza para comparação (remove º, °, ? e similares)
+            const normF = s => String(s || '').replace(/[^A-Z0-9 /]/gi, '').trim().toUpperCase();
+            let filtradas = todasGuarnicoes;
+            if (unidade)    filtradas = filtradas.filter(g => normF(g.unidade).includes(normF(unidade)));
+            if (modalidade) filtradas = filtradas.filter(g => (g.modalidade || '').toUpperCase().includes(modalidade.toUpperCase()));
+
+            renderizarMarcadores(filtradas);
+        }
+
+        // ── Sincronização ──
+        async function sincronizarAgora() {
+            const btn = document.getElementById('btn-sync');
+            const status = document.getElementById('status-sync');
+            btn.disabled = true;
+            status.className = 'status-sync';
+            status.textContent = 'Buscando dados do GEO...';
+
+            try {
+                // Lê posições salvas no Firebase pelo coletor-geo.js
+                const r = await fetch(`${FB_URL}/rastreamento.json`);
+                const dados = await r.json() || {};
+                todasGuarnicoes = Object.values(dados).filter(g => g && g.lat && g.lng);
+                aplicarFiltro();
+                status.className = 'status-sync ok';
+                status.textContent = `${todasGuarnicoes.length} guarnições carregadas`;
+            } catch(e) {
+                status.className = 'status-sync err';
+                status.textContent = 'Erro ao conectar ao GEO';
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function toggleAutoSync(ativo) {
+            if (_autoInterval) clearInterval(_autoInterval);
+            if (ativo) {
+                _autoInterval = setInterval(sincronizarAgora, 100000);
+                document.getElementById('status-sync').textContent = 'Auto-sync ativo (100s)';
+            } else {
+                document.getElementById('status-sync').textContent = 'Auto-sync desativado';
+            }
+        }
+    </script>
+</body>
+</html>
