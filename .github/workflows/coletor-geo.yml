@@ -11,15 +11,15 @@ jobs:
     timeout-minutes: 3
 
     steps:
-      - name: Checkout do repositório
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js
+      - name: Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
 
       - name: Rodar coletor
         env:
-          FIREBASE_URL: ${{ secrets.FIREBASE_URL }}
+          GAS_URL: ${{ secrets.GAS_URL }}
         run: node coletor-geo-actions.js
