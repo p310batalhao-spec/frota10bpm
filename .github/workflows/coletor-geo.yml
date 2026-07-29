@@ -2,11 +2,7 @@ name: Coletor GEO — 10º BPM
 
 on:
   schedule:
-    # Roda a cada 2 minutos (mínimo permitido pelo GitHub Actions)
-    # GitHub Actions usa UTC — não precisa ajustar para BRT
-    - cron: '*/2 * * * *'
-
-  # Permite rodar manualmente pelo painel do GitHub
+    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -21,9 +17,9 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
-      - name: Rodar coletor (coleta única)
+      - name: Rodar coletor
         env:
           FIREBASE_URL: ${{ secrets.FIREBASE_URL }}
         run: node coletor-geo-actions.js
