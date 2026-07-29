@@ -40,6 +40,7 @@ function httpGet(url) {
 function fbPut(path, dados) {
     return new Promise((resolve, reject) => {
         const corpo = JSON.stringify(dados);
+        // path pode ser '/rastreamento' (nó raiz) ou '/rastreamento/123/456'
         const url   = new URL(`${FB_URL}${path}.json`);
         const opts  = {
             method:  'PUT',
@@ -120,11 +121,14 @@ async function main() {
     const agora = new Date().toISOString();
     let salvas = 0;
 
+    // Monta objeto completo do snapshot atual — todos os radios do 10º BPM de uma vez
+    // Isso SUBSTITUI o nó /rastreamento inteiro, garantindo que só fique o 10º BPM
+    const snapshot = {};
     for (const g of daUnidade) {
-        const chave = g.idRadio || g.guarnicao.replace(/\s+/g, '_');
-
-        const dados = {
-            lat: g.lat, lng: g.lng,
+        const chave = g.idRadio;
+        snapshot[chave] = {
+            lat:         g.lat,
+            lng:         g.lng,
             idRadio:     g.idRadio,
             nome:        g.guarnicao,
             unidade:     g.unidade,
@@ -135,21 +139,26 @@ async function main() {
             ocorrencia:  g.ocorrencia,
             dataHoraGEO: g.dataHora,
             coletadoEm:  agora,
+            origem:      'github-actions',
         };
-
-        // Posição atual
-        await fbPut(`/rastreamento/${chave}`, dados);
-
-        // Histórico
-        if (g.timestamp) {
-            const chHist = g.timestamp.replace(/[:.]/g, '-').slice(0, 19);
-            await fbPut(`/rastreamento_historico/${chave}/${chHist}`, {
-                lat: g.lat, lng: g.lng,
-                nome: g.guarnicao, status: g.status,
-                dataHora: g.dataHora, militares: g.militares,
-            });
-        }
         salvas++;
+    }
+
+    // PUT no nó raiz /rastreamento substitui TUDO — garante que não fica dado antigo/incorreto
+    await fbPut('/rastreamento', snapshot);
+
+    // Histórico: acumula por guarnição/timestamp (não substitui — cresce ao longo do tempo)
+    for (const g of daUnidade) {
+        if (!g.timestamp) continue;
+        const chHist = g.timestamp.replace(/[:.]/g, '-').slice(0, 19);
+        await fbPut(`/rastreamento_historico/${g.idRadio}/${chHist}`, {
+            lat:      g.lat,
+            lng:      g.lng,
+            nome:     g.guarnicao,
+            status:   g.status,
+            dataHora: g.dataHora,
+            militares: g.militares,
+        });
     }
 
     // 4. Atualiza status do coletor
